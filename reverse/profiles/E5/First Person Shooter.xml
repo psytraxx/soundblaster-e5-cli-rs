@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<profile>
+  <info>
+    <avatar>avatar_sniper.jpg</avatar>
+    <profile_name>First Person Shooter</profile_name>
+    <profile_id>7</profile_id>
+    <version>2.0</version>
+  </info>
+  <settings>
+    <surround enable="true" level="0.3" />
+    <crystalizer enable="false" level="0.65" />
+    <bass enable="false" level="0.5" cross_freq="80" />
+    <svm enable="true" level="0.6" mode="0" />
+    <dlgplus enable="false" level="0.5" />
+    <voicefx enable="false" preset="1" />
+    <vip_svm enable="false" level="0.74" />
+    <noise_reduction enable="true" />
+    <aec enable="false" />
+    <voice_fcs enable="false" level="30" />
+    <mic_eq enable="false" preset="1" />
+    <graphic_eq enable="true" preset="0" preamp="0" band0="6" band1="0" band2="-3" band3="-3" band4="0" band5="0" band6="0" band7="3" band8="3" band9="0" />
+  </settings>
+</profile>

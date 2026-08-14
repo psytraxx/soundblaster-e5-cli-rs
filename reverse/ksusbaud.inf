@@ -1,0 +1,2270 @@
+; Creative KSAUD INF file
+;
+; Language : English
+; Copyright 2005-2015, Creative Technology Ltd.
+
+[Version]
+Signature="$Windows NT$"
+Class=MEDIA
+ClassGUID={4d36e96c-e325-11ce-bfc1-08002be10318} 
+CatalogFile.ntx86=ksusbaud32.cat
+CatalogFile.ntamd64=ksusbaud64.cat
+Provider=%MfgName%
+DriverVer=12/16/2015, 1.14.1.5
+
+[SourceDisksNames]
+101 = %DriverDisk1%,,
+
+[SourceDisksFiles.x86]
+ksusbaud.sys     = 101,i386
+;KsusbMalc32.DLL  = 101,i386
+KSusbAPO32.dll   = 101,i386
+KSUSBPPLD32.dll  = 101,i386
+KSUSBWrap32.dll  = 101,i386
+KSUSBDGFX32.dll  = 101,i386
+KSUSBSPI32.dll  = 101,i386
+KsUSBDvInst.dll  = 101,i386
+ksUSBaud.ini     = 101
+ResDefE.exe     = 101
+AddCat.exe     = 101
+KSUSBAPO32.hda = 101,i386
+KSUSBDGFX32.hda = 101,i386
+KSUSBWrap32.hda = 101,i386
+KSUSBAIM32.exe   = 101,i386
+cfSB1580.ini  = 101
+cfSB1590.ini  = 101
+cfSB1600.ini  = 101
+cfSB1610.ini  = 101
+cfSB1700.ini  = 101
+USBMixerDefault.reg = 101
+USBDefaultVista.reg = 101
+SB.ico     	  = 101
+SB.bmp        = 101
+H7.ico	= 101
+G5.ico  = 101
+
+[SourceDisksFiles.amd64]
+ksusbaud.sys     = 101,amd64
+KSusbAPO32.dll   = 101,i386
+KSusbAPO64.dll   = 101,amd64
+KSusbPPLD64.dll  = 101,amd64
+KSusbWrap64.dll  = 101,amd64
+KSusbDGFX64.dll  = 101,amd64
+KSusbWrap32.dll  = 101,i386
+KSusbDGFX32.dll  = 101,i386
+KSusbSPI32.dll  = 101,i386
+KSusbSPI64.dll  = 101,amd64
+KsusbDvInst.dll  = 101,amd64
+ksusbAud.ini     = 101
+ResDefE.exe     = 101
+AddCat.exe     = 101
+KSUSBAPO32.hda = 101,i386
+KSUSBDGFX32.hda = 101,i386
+KSUSBWrap32.hda = 101,i386
+KSUSBAPO64.hda = 101,amd64
+KSUSBDGFX64.hda = 101,amd64
+KSUSBWrap64.hda = 101,amd64
+KSusbAIM64.exe   = 101,amd64
+CfSB1580.ini  = 101
+cfSB1590.ini  = 101
+cfSB1600.ini  = 101
+cfSB1610.ini  = 101
+cfSB1700.ini  = 101
+usbMixerDefault.reg = 101
+usbDefaultVista.reg = 101
+SB.ico     	= 101
+SB.bmp       	= 101
+H7.ico	= 101
+G5.ico  = 101
+
+[Manufacturer]
+%MfgName%=CREATIVE, ntamd64, ntx86.6.3, ntamd64.6.3
+
+[SignatureAttributes]
+KSUSBAPO32.dll=SignatureAttributes.PETrust
+KSUSBAPO64.dll=SignatureAttributes.PETrust
+
+[SignatureAttributes.PETrust]
+PETrust=true
+
+;; Mechanism for excluding drivers from the "Add New Hardware" list.
+[ControlFlags]
+;; *EXCLUDE is a made up ID to prevent rank 1 drivers from showing in list.
+ExcludeFromSelect = *
+
+[CREATIVE]
+;Creative
+%USB\VID_041E&PID_323A&MI_00.DeviceDesc%=SB1580_Device, USB\VID_041E&PID_323A&MI_00
+%USB\VID_041E&PID_323C&MI_00.DeviceDesc%=SB1590_Device, USB\VID_041E&PID_323C&MI_00
+%USB\VID_041E&PID_323B&MI_00.DeviceDesc%=SB1600_Device, USB\VID_041E&PID_323B&MI_00
+%USB\VID_041E&PID_323E&MI_00.DeviceDesc%=SB1610_Device, USB\VID_041E&PID_323E&MI_00
+%USB\VID_041E&PID_3243&MI_00.DeviceDesc%=SB1700_Device, USB\VID_041E&PID_3243&MI_00
+
+
+[CREATIVE.ntamd64]
+;Creative
+%USB\VID_041E&PID_323A&MI_00.DeviceDesc%=SB1580_Device, USB\VID_041E&PID_323A&MI_00
+%USB\VID_041E&PID_323C&MI_00.DeviceDesc%=SB1590_Device, USB\VID_041E&PID_323C&MI_00
+%USB\VID_041E&PID_323B&MI_00.DeviceDesc%=SB1600_Device, USB\VID_041E&PID_323B&MI_00
+%USB\VID_041E&PID_323E&MI_00.DeviceDesc%=SB1610_Device, USB\VID_041E&PID_323E&MI_00
+%USB\VID_041E&PID_3243&MI_00.DeviceDesc%=SB1700_Device, USB\VID_041E&PID_3243&MI_00
+
+
+[CREATIVE.ntx86.6.3]
+;Creative
+%USB\VID_041E&PID_323A&MI_00.DeviceDesc%=SB1580_Device.6.3, USB\VID_041E&PID_323A&MI_00
+%USB\VID_041E&PID_323C&MI_00.DeviceDesc%=SB1590_Device.6.3, USB\VID_041E&PID_323C&MI_00
+%USB\VID_041E&PID_3243&MI_00.DeviceDesc%=SB1700_Device.6.3, USB\VID_041E&PID_3243&MI_00
+%USB\VID_041E&PID_323B&MI_00.DeviceDesc%=SB1600_Device.6.3, USB\VID_041E&PID_323B&MI_00
+%USB\VID_041E&PID_323E&MI_00.DeviceDesc%=SB1610_Device.6.3, USB\VID_041E&PID_323E&MI_00
+
+
+[CREATIVE.ntamd64.6.3]
+;Creative
+%USB\VID_041E&PID_323A&MI_00.DeviceDesc%=SB1580_Device.6.3, USB\VID_041E&PID_323A&MI_00
+%USB\VID_041E&PID_323C&MI_00.DeviceDesc%=SB1590_Device.6.3, USB\VID_041E&PID_323C&MI_00
+%USB\VID_041E&PID_3243&MI_00.DeviceDesc%=SB1700_Device.6.3, USB\VID_041E&PID_3243&MI_00
+%USB\VID_041E&PID_323B&MI_00.DeviceDesc%=SB1600_Device.6.3, USB\VID_041E&PID_323B&MI_00
+%USB\VID_041E&PID_323E&MI_00.DeviceDesc%=SB1610_Device.6.3, USB\VID_041E&PID_323E&MI_00
+
+
+;; SB1580 specific *****************************************************************************
+[SB1580.Interface.Wave]
+AddReg=SB1580.Interface.Wave.AddReg,SysFx1580.AddReg,SB1580.SysEP.AddReg
+DelReg=SysFx.DelReg
+
+[SB1580.Interface.Wave.6.3]
+AddReg=SB1580.Interface.Wave.AddReg,SysFx1580.6.3.AddReg,SB1580.SysEP.AddReg
+DelReg=SysFx.DelReg
+
+[SB1580.Interface.Wave.AddReg]
+HKR,,FriendlyName,,%SB1580.Wave.szPname%
+HKR,,CurveType,1,01,00,00,00
+HKR,,CLSID,,%Proxy.CLSID%
+
+[SB1580HW.AddReg]
+HKR,,FriendlyName,,%SB1580.DeviceDesc%
+
+[SB1580.AddReg]
+HKR,Drivers\wave\wdmaud.drv, Description,,%SB1580.DeviceDesc%
+HKR,Drivers\midi\wdmaud.drv,Description,,%SB1580.DeviceDesc%
+HKR,Drivers\mixer\wdmaud.drv,Description,,%SB1580.DeviceDesc%
+HKR,Drivers\aux\wdmaud.drv,  Description,,%SB1580.DeviceDesc%
+
+HKR,"Product",Name,,%SB1580.Product%
+HKR,"DevName",%WaveOutDevName%,,%SB1580.Wave.szPname%
+HKR,"DevName",%WaveInDevName%,,%SB1580.Wave.szPname%
+HKR,"DevName",%MixerDevName%,,%SB1580.Topology.szPname%
+;; Copy friendly names to a location the driver knows
+HKLM,%DevInfoSB1580%,%WaveOutDevName%,,%SB1580.Wave.szPname%
+HKLM,%DevInfoSB1580%,%WaveInDevName%,,%SB1580.Wave.szPname%
+HKLM,%DevInfoSB1580%,%MixerDevName%,,%SB1580.Topology.szPname%
+
+;; SB1590 specific *****************************************************************************
+[SB1590.Interface.Wave]
+AddReg=SB1590.Interface.Wave.AddReg,SysFx1590.AddReg,SB1590.SysEP.AddReg
+DelReg=SysFx.DelReg
+
+[SB1590.Interface.Wave.6.3]
+AddReg=SB1590.Interface.Wave.AddReg,SysFx1590.6.3.AddReg,SB1590.SysEP.AddReg
+DelReg=SysFx.DelReg
+
+[SB1590.Interface.Wave.AddReg]
+HKR,,FriendlyName,,%SB1590.Wave.szPname%
+HKR,,CurveType,1,01,00,00,00
+HKR,,CLSID,,%Proxy.CLSID%
+
+[SB1590HW.AddReg]
+HKR,,FriendlyName,,%SB1590.DeviceDesc%
+
+[SB1590.AddReg]
+HKR,Drivers\wave\wdmaud.drv, Description,,%SB1590.DeviceDesc%
+HKR,Drivers\midi\wdmaud.drv,Description,,%SB1590.DeviceDesc%
+HKR,Drivers\mixer\wdmaud.drv,Description,,%SB1590.DeviceDesc%
+HKR,Drivers\aux\wdmaud.drv,  Description,,%SB1590.DeviceDesc%
+
+HKR,"Product",Name,,%SB1590.Product%
+HKR,"DevName",%WaveOutDevName%,,%SB1590.Wave.szPname%
+HKR,"DevName",%WaveInDevName%,,%SB1590.Wave.szPname%
+HKR,"DevName",%MixerDevName%,,%SB1590.Topology.szPname%
+;; Copy friendly names to a location the driver knows
+HKLM,%DevInfoSB1590%,%WaveOutDevName%,,%SB1590.Wave.szPname%
+HKLM,%DevInfoSB1590%,%WaveInDevName%,,%SB1590.Wave.szPname%
+HKLM,%DevInfoSB1590%,%MixerDevName%,,%SB1590.Topology.szPname%
+
+;; This location will be accessible in the absence of driver
+HKLM,"Software\Creative Tech\ResDefE",DelayInMs,0x00010001,12000
+
+;; SB1600 specific *****************************************************************************
+[SB1600.Interface.Wave]
+AddReg=SB1600.Interface.Wave.AddReg,SysFx1600.AddReg,SB1600.SysEP.AddReg
+DelReg=SysFx.DelReg
+
+[SB1600.Interface.Wave.6.3]
+AddReg=SB1600.Interface.Wave.AddReg,SysFx1600.6.3.AddReg,SB1600.SysEP.AddReg
+DelReg=SysFx.DelReg
+
+[SB1600.Interface.Wave.AddReg]
+HKR,,FriendlyName,,%SB1600.Wave.szPname%
+HKR,,CurveType,1,01,00,00,00
+HKR,,CLSID,,%Proxy.CLSID%
+
+[SB1600HW.AddReg]
+HKR,,FriendlyName,,%SB1600.DeviceDesc%
+
+[SB1600.AddReg]
+HKR,Drivers\wave\wdmaud.drv, Description,,%SB1600.DeviceDesc%
+HKR,Drivers\midi\wdmaud.drv,Description,,%SB1600.DeviceDesc%
+HKR,Drivers\mixer\wdmaud.drv,Description,,%SB1600.DeviceDesc%
+HKR,Drivers\aux\wdmaud.drv,  Description,,%SB1600.DeviceDesc%
+
+HKR,"Product",Name,,%SB1600.Product%
+HKR,"DevName",%WaveOutDevName%,,%SB1600.Wave.szPname%
+HKR,"DevName",%WaveInDevName%,,%SB1600.Wave.szPname%
+HKR,"DevName",%MixerDevName%,,%SB1600.Topology.szPname%
+;; Copy friendly names to a location the driver knows
+HKLM,%DevInfoSB1600%,%WaveOutDevName%,,%SB1600.Wave.szPname%
+HKLM,%DevInfoSB1600%,%WaveInDevName%,,%SB1600.Wave.szPname%
+HKLM,%DevInfoSB1600%,%MixerDevName%,,%SB1600.Topology.szPname%
+
+;; SB1610 specific *****************************************************************************
+[SB1610.Interface.Wave]
+AddReg=SB1610.Interface.Wave.AddReg,SysFx1610.AddReg,SB1610.SysEP.AddReg
+DelReg=SysFx.DelReg
+
+[SB1610.Interface.Wave.6.3]
+AddReg=SB1610.Interface.Wave.AddReg,SysFx1610.6.3.AddReg,SB1610.SysEP.AddReg
+DelReg=SysFx.DelReg
+
+[SB1610.Interface.Wave.AddReg]
+HKR,,FriendlyName,,%SB1610.Wave.szPname%
+HKR,,CurveType,1,01,00,00,00
+HKR,,CLSID,,%Proxy.CLSID%
+
+[SB1610HW.AddReg]
+HKR,,FriendlyName,,%SB1610.DeviceDesc%
+
+[SB1610.AddReg]
+HKR,Drivers\wave\wdmaud.drv, Description,,%SB1610.DeviceDesc%
+HKR,Drivers\midi\wdmaud.drv,Description,,%SB1610.DeviceDesc%
+HKR,Drivers\mixer\wdmaud.drv,Description,,%SB1610.DeviceDesc%
+HKR,Drivers\aux\wdmaud.drv,  Description,,%SB1610.DeviceDesc%
+
+HKR,"Product",Name,,%SB1610.Product%
+HKR,"DevName",%WaveOutDevName%,,%SB1610.Wave.szPname%
+HKR,"DevName",%WaveInDevName%,,%SB1610.Wave.szPname%
+HKR,"DevName",%MixerDevName%,,%SB1610.Topology.szPname%
+;; Copy friendly names to a location the driver knows
+HKLM,%DevInfoSB1610%,%WaveOutDevName%,,%SB1610.Wave.szPname%
+HKLM,%DevInfoSB1610%,%WaveInDevName%,,%SB1610.Wave.szPname%
+HKLM,%DevInfoSB1610%,%MixerDevName%,,%SB1610.Topology.szPname%
+
+
+;; SB1700 specific *****************************************************************************
+[SB1700.Interface.Wave]
+AddReg=SB1700.Interface.Wave.AddReg,SysFx1700.AddReg,SB1700.SysEP.AddReg,SB1700.Customize.AddReg
+DelReg=SysFx.DelReg
+
+[SB1700.Interface.Wave.6.3]
+AddReg=SB1700.Interface.Wave.AddReg,SysFx1700.6.3.AddReg,SB1700.SysEP.AddReg,SB1700.Customize.AddReg
+DelReg=SysFx.DelReg
+
+[SB1700.Interface.Wave.AddReg]
+HKR,,FriendlyName,,%SB1700.Wave.szPname%
+HKR,,CurveType,1,01,00,00,00
+HKR,,CLSID,,%Proxy.CLSID%
+
+[SB1700HW.AddReg]
+HKR,,FriendlyName,,%SB1700.DeviceDesc%
+
+[SB1700.AddReg]
+HKR,Drivers\wave\wdmaud.drv, Description,,%SB1700.DeviceDesc%
+HKR,Drivers\midi\wdmaud.drv,Description,,%SB1700.DeviceDesc%
+HKR,Drivers\mixer\wdmaud.drv,Description,,%SB1700.DeviceDesc%
+HKR,Drivers\aux\wdmaud.drv,  Description,,%SB1700.DeviceDesc%
+
+HKR,"Product",Name,,%SB1700.Product%
+HKR,"DevName",%WaveOutDevName%,,%SB1700.Wave.szPname%
+HKR,"DevName",%WaveInDevName%,,%SB1700.Wave.szPname%
+HKR,"DevName",%MixerDevName%,,%SB1700.Topology.szPname%
+;; Copy friendly names to a location the driver knows
+HKLM,%DevInfoSB1700%,%WaveOutDevName%,,%SB1700.Wave.szPname%
+HKLM,%DevInfoSB1700%,%WaveInDevName%,,%SB1700.Wave.szPname%
+HKLM,%DevInfoSB1700%,%MixerDevName%,,%SB1700.Topology.szPname%
+
+[SB1700.Customize.AddReg]
+;HKR,"EP\\0",%PKEY_AudioEndpoint_Name%,,"Headset"
+HKR,"EP\\0",%PKEY_AudioEndpoint_Icon%,,"G5.ico"
+;HKR,"EP\\1",%PKEY_AudioEndpoint_Name%,,"Headset Microphone"
+;HKR,"EP\\1",%PKEY_AudioEndpoint_Icon%,,"G5.ico"
+
+;; This location will be accessible in the absence of driver
+HKLM,"Software\Creative Tech\ResDefE",DelayInMs,0x00010001,12000
+
+;; Generic *****************************************************************************
+
+[KSAUD.AddReg]
+HKR,,SetupPreferredAudioDevices,3,01,00,00,00
+HKR,,AssociatedFilters,,"wdmaud,redbook"
+HKR,,Driver,,ksusbaud.sys
+HKR,,NTMPDriver,,"ksusbaud.sys,sbemul.sys"
+
+HKR,,CLSID,,%Proxy.CLSID%
+
+HKR,Drivers,SubClasses,,"wave,midi,mixer,aux"
+
+HKR,Drivers\wave\wdmaud.drv, Driver,,wdmaud.drv
+HKR,Drivers\midi\wdmaud.drv, Driver,,wdmaud.drv
+HKR,Drivers\mixer\wdmaud.drv,Driver,,wdmaud.drv
+HKR,Drivers\aux\wdmaud.drv,Driver,,wdmaud.drv
+HKR,Config,Refresh,1,1,0,0,0
+
+[KSAUDHW.DelReg]
+HKR,KSUSBAud_Device
+HKR,KSUSBAud_Topology
+HKR,KSUSBAud_Mixer
+HKR,USBEAX3
+HKR,USBPitchShift
+HKR,USBSilencer
+
+[KS_NAMES.AddReg]
+HKLM,"Software\Creative Tech\KSUSBAud",ProductInf,,%InfFileName%
+
+[DestinationDirs]
+KSAUD.CopyList         = 10,system32\drivers ; %SystemRoot%\system32\drivers
+DefaultDestDir         = 10,system32\drivers ; %SystemRoot%\system32\drivers
+SfxFx.CopyList.ntx86   = 11                  ; %SystemRoot%\system32
+SfxFxAPOChain.CopyList.ntx86 = 11				; %SystemRoot%\system32
+SfxFx.CopyList.ntamd64 = 11                  ; %SystemRoot%\system32
+SfxFxAPOChain.CopyList.ntamd64 = 11                  ; %SystemRoot%\system32
+SfxFx32.CopyList.ntamd64 = 16425             ; %SystemRoot%\SysWOW64
+SfxFx32APOChain.CopyList.ntamd64 = 16425     ; %SystemRoot%\SysWOW64
+CoInst.CopyList        = 11                  ; %SystemRoot%\system32
+APOIM.CopyList.ntx86   = 10                  ; %SystemRoot%
+APOIM.CopyList.ntamd64 = 10                  ; %SystemRoot%
+APOIMConfig.CopyList   = 16419               ; ProgramData
+AudioBrand.SBX.CopyList = 11           ; %SystemRoot%\system32
+RegIni.CopyList    = 11                  ; %SystemRoot%\system32
+
+[KSAUD.CopyList]
+ksUSBaud.sys
+
+[RegIni.CopyList]
+ksUSBaud.ini
+USBMixerDefault.reg
+USBDefaultVista.reg
+
+[CoInst.CopyList]
+KsUSBDvInst.dll
+
+[APOIMConfig.CopyList]
+cfSB1580.ini
+cfSB1590.ini
+cfSB1600.ini
+cfSB1610.ini
+cfSB1700.ini
+
+[SfxFx.CopyList.ntx86]
+KSUSBAPO32.dll
+KSUSBPPLD32.dll
+KSUSBSPI32.dll
+
+[SfxFxAPOChain.CopyList.ntx86]
+KSUSBWrap32.dll  
+KSUSBDGFX32.dll 
+
+[SfxFx.CopyList.ntamd64]
+KSUSBAPO64.dll
+KSUSBPPLD64.dll
+KSUSBSPI64.dll
+
+[SfxFxAPOChain.CopyList.ntamd64]
+KSUSBWrap64.dll  
+KSUSBDGFX64.dll
+
+[SfxFx32APOChain.CopyList.ntamd64]
+KSUSBWrap32.dll  
+KSUSBDGFX32.dll
+
+[SfxFx32.CopyList.ntamd64]
+KSUSBAPO32.dll
+KSUSBSPI32.dll
+
+[APOIM.CopyList.ntx86]
+ResDefE.exe
+KSUSBAIM32.exe
+AddCat.exe
+KSUSBAPO32.hda
+KSUSBDGFX32.hda
+KSUSBWrap32.hda
+
+[APOIM.CopyList.ntamd64]
+ResDefE.exe
+KSUSBAIM64.exe
+AddCat.exe
+KSUSBAPO32.hda
+KSUSBDGFX32.hda
+KSUSBWrap32.hda
+KSUSBAPO64.hda
+KSUSBDGFX64.hda
+KSUSBWrap64.hda
+
+[AudioBrand.SBX.CopyList]
+SB.ico
+SB.bmp
+H7.ico
+G5.ico
+
+
+;; SB1580 specific x86 install*****************************************************************************
+
+[SB1580_Device.ntx86.CoInstallers]
+CopyFiles=CoInst.CopyList,APOIM.CopyList.ntx86
+AddReg=COINST.AddReg
+
+[SB1580_Device.ntx86]
+Include=ks.inf, wdmaudio.inf
+Needs=KS.Registration, WDMAUDIO.Registration,mssysfx.CopyFilesAndRegister
+CopyFiles=KSAUD.CopyList,RegIni.CopyList,SfxFx.CopyList.ntx86,APOIMConfig.CopyList,AudioBrand.SBX.CopyList,SfxFxAPOChain.CopyList.ntx86
+AddReg=KSAUD.AddReg,SBAVMon.AddReg,SB1580.AddReg,KS_NAMES.AddReg,AudioBrand.SBX.AddReg
+RegisterDlls=SfxFx.RegisterDlls.ntx86,SfxFxAPOChain.RegisterDlls.ntx86
+
+[SB1580_Device.ntx86.Interfaces]
+AddInterface=%KSCATEGORY_AUDIO%,%KSNAME_GLOBAL%,        SB1580.Interface.Wave
+AddInterface=%KSCATEGORY_RENDER%,%KSNAME_GLOBAL%,       SB1580.Interface.Wave
+AddInterface=%KSCATEGORY_CAPTURE%,%KSNAME_GLOBAL%,      SB1580.Interface.Wave
+
+[SB1580_Device.ntx86.Services]
+AddService = KsUSBaud, 0x00000002, KSAUD_Service_Inst
+
+[SB1580_Device.ntx86.HW]
+AddReg=SB1580HW.AddReg
+DelReg=KSAUDHW.DelReg
+
+;; SB1580 specific amd64 install*****************************************************************************
+
+[SB1580_Device.ntamd64.CoInstallers]
+CopyFiles=CoInst.CopyList,APOIM.CopyList.ntamd64
+AddReg=COINST.AddReg
+
+[SB1580_Device.ntamd64]
+Include=ks.inf, wdmaudio.inf
+Needs=KS.Registration, WDMAUDIO.Registration,mssysfx.CopyFilesAndRegister
+CopyFiles=KSAUD.CopyList,RegIni.CopyList,SfxFx.CopyList.ntamd64,SfxFx32.CopyList.ntamd64,APOIMConfig.CopyList,AudioBrand.SBX.CopyList,SfxFxAPOChain.CopyList.ntamd64,SfxFx32APOChain.CopyList.ntamd64
+AddReg=KSAUD.AddReg,SBAVMon.AddReg,SB1580.AddReg,KS_NAMES.AddReg,AudioBrand.SBX.AddReg
+RegisterDlls=SfxFx.RegisterDlls.ntamd64,SfxFxAPOChain.RegisterDlls.ntamd64
+
+[SB1580_Device.ntamd64.Interfaces]
+AddInterface=%KSCATEGORY_AUDIO%,%KSNAME_GLOBAL%,        SB1580.Interface.Wave
+AddInterface=%KSCATEGORY_RENDER%,%KSNAME_GLOBAL%,       SB1580.Interface.Wave
+AddInterface=%KSCATEGORY_CAPTURE%,%KSNAME_GLOBAL%,      SB1580.Interface.Wave
+
+[SB1580_Device.ntamd64.Services]
+AddService = KsUSBaud, 0x00000002, KSAUD_Service_Inst
+
+[SB1580_Device.ntamd64.HW]
+AddReg=SB1580HW.AddReg
+DelReg=KSAUDHW.DelReg
+
+;; SB1580 specific x86.6.3 install*****************************************************************************
+
+[SB1580_Device.6.3.ntx86.CoInstallers]
+CopyFiles=CoInst.CopyList,APOIM.CopyList.ntx86
+AddReg=COINST.AddReg
+
+[SB1580_Device.6.3.ntx86]
+Include=ks.inf, wdmaudio.inf
+Needs=KS.Registration, WDMAUDIO.Registration,mssysfx.CopyFilesAndRegister
+CopyFiles=KSAUD.CopyList,RegIni.CopyList,SfxFx.CopyList.ntx86,APOIMConfig.CopyList,AudioBrand.SBX.CopyList,SfxFxAPOChain.CopyList.ntx86
+AddReg=KSAUD.AddReg,SBAVMon.AddReg,SB1580.AddReg,KS_NAMES.AddReg,AudioBrand.SBX.AddReg
+RegisterDlls=SfxFx.RegisterDlls.ntx86,SfxFxAPOChain.RegisterDlls.ntx86
+
+[SB1580_Device.6.3.ntx86.Interfaces]
+AddInterface=%KSCATEGORY_AUDIO%,%KSNAME_GLOBAL%,        SB1580.Interface.Wave.6.3
+AddInterface=%KSCATEGORY_RENDER%,%KSNAME_GLOBAL%,       SB1580.Interface.Wave.6.3
+AddInterface=%KSCATEGORY_CAPTURE%,%KSNAME_GLOBAL%,      SB1580.Interface.Wave.6.3
+
+[SB1580_Device.6.3.ntx86.Services]
+AddService = KsUSBaud, 0x00000002, KSAUD_Service_Inst
+
+[SB1580_Device.6.3.ntx86.HW]
+AddReg=SB1580HW.AddReg
+DelReg=KSAUDHW.DelReg
+
+;; SB1580 specific amd64.6.3 install*****************************************************************************
+
+[SB1580_Device.6.3.ntamd64.CoInstallers]
+CopyFiles=CoInst.CopyList,APOIM.CopyList.ntamd64
+AddReg=COINST.AddReg
+
+[SB1580_Device.6.3.ntamd64]
+Include=ks.inf, wdmaudio.inf
+Needs=KS.Registration, WDMAUDIO.Registration,mssysfx.CopyFilesAndRegister
+CopyFiles=KSAUD.CopyList,RegIni.CopyList,SfxFx.CopyList.ntamd64,SfxFx32.CopyList.ntamd64,APOIMConfig.CopyList,AudioBrand.SBX.CopyList,SfxFxAPOChain.CopyList.ntamd64,SfxFx32APOChain.CopyList.ntamd64
+AddReg=KSAUD.AddReg,SBAVMon.AddReg,SB1580.AddReg,KS_NAMES.AddReg,AudioBrand.SBX.AddReg
+RegisterDlls=SfxFx.RegisterDlls.ntamd64,SfxFxAPOChain.RegisterDlls.ntamd64
+
+[SB1580_Device.6.3.ntamd64.Interfaces]
+AddInterface=%KSCATEGORY_AUDIO%,%KSNAME_GLOBAL%,        SB1580.Interface.Wave.6.3
+AddInterface=%KSCATEGORY_RENDER%,%KSNAME_GLOBAL%,       SB1580.Interface.Wave.6.3
+AddInterface=%KSCATEGORY_CAPTURE%,%KSNAME_GLOBAL%,      SB1580.Interface.Wave.6.3
+
+[SB1580_Device.6.3.ntamd64.Services]
+AddService = KsUSBaud, 0x00000002, KSAUD_Service_Inst
+
+[SB1580_Device.6.3.ntamd64.HW]
+AddReg=SB1580HW.AddReg
+DelReg=KSAUDHW.DelReg
+
+;; SB1590 specific x86 install*****************************************************************************
+
+[SB1590_Device.ntx86.CoInstallers]
+CopyFiles=CoInst.CopyList,APOIM.CopyList.ntx86
+AddReg=COINST.AddReg
+
+[SB1590_Device.ntx86]
+Include=ks.inf, wdmaudio.inf
+Needs=KS.Registration, WDMAUDIO.Registration,mssysfx.CopyFilesAndRegister
+CopyFiles=KSAUD.CopyList,RegIni.CopyList,SfxFx.CopyList.ntx86,APOIMConfig.CopyList,AudioBrand.SBX.CopyList,SfxFxAPOChain.CopyList.ntx86
+AddReg=KSAUD.AddReg,SBAVMon.AddReg,SB1590.AddReg,KS_NAMES.AddReg,AudioBrand.SBX.AddReg
+RegisterDlls=SfxFx.RegisterDlls.ntx86,SfxFxAPOChain.RegisterDlls.ntx86
+
+[SB1590_Device.ntx86.Interfaces]
+AddInterface=%KSCATEGORY_AUDIO%,%KSNAME_GLOBAL%,        SB1590.Interface.Wave
+AddInterface=%KSCATEGORY_RENDER%,%KSNAME_GLOBAL%,       SB1590.Interface.Wave
+AddInterface=%KSCATEGORY_CAPTURE%,%KSNAME_GLOBAL%,      SB1590.Interface.Wave
+
+[SB1590_Device.ntx86.Services]
+AddService = KsUSBaud, 0x00000002, KSAUD_Service_Inst
+
+[SB1590_Device.ntx86.HW]
+AddReg=SB1590HW.AddReg
+DelReg=KSAUDHW.DelReg
+
+;; SB1590 specific amd64 install*****************************************************************************
+
+[SB1590_Device.ntamd64.CoInstallers]
+CopyFiles=CoInst.CopyList,APOIM.CopyList.ntamd64
+AddReg=COINST.AddReg
+
+[SB1590_Device.ntamd64]
+Include=ks.inf, wdmaudio.inf
+Needs=KS.Registration, WDMAUDIO.Registration,mssysfx.CopyFilesAndRegister
+CopyFiles=KSAUD.CopyList,RegIni.CopyList,SfxFx.CopyList.ntamd64,SfxFx32.CopyList.ntamd64,APOIMConfig.CopyList,AudioBrand.SBX.CopyList,SfxFxAPOChain.CopyList.ntamd64,SfxFx32APOChain.CopyList.ntamd64
+AddReg=KSAUD.AddReg,SBAVMon.AddReg,SB1590.AddReg,KS_NAMES.AddReg,AudioBrand.SBX.AddReg
+RegisterDlls=SfxFx.RegisterDlls.ntamd64,SfxFxAPOChain.RegisterDlls.ntamd64
+
+[SB1590_Device.ntamd64.Interfaces]
+AddInterface=%KSCATEGORY_AUDIO%,%KSNAME_GLOBAL%,        SB1590.Interface.Wave
+AddInterface=%KSCATEGORY_RENDER%,%KSNAME_GLOBAL%,       SB1590.Interface.Wave
+AddInterface=%KSCATEGORY_CAPTURE%,%KSNAME_GLOBAL%,      SB1590.Interface.Wave
+
+[SB1590_Device.ntamd64.Services]
+AddService = KsUSBaud, 0x00000002, KSAUD_Service_Inst
+
+[SB1590_Device.ntamd64.HW]
+AddReg=SB1590HW.AddReg
+DelReg=KSAUDHW.DelReg
+
+;; SB1590 specific x86.6.3 install*****************************************************************************
+
+[SB1590_Device.ntx86.6.3.CoInstallers]
+CopyFiles=CoInst.CopyList,APOIM.CopyList.ntx86
+AddReg=COINST.AddReg
+
+[SB1590_Device.6.3.ntx86]
+Include=ks.inf, wdmaudio.inf
+Needs=KS.Registration, WDMAUDIO.Registration,mssysfx.CopyFilesAndRegister
+CopyFiles=KSAUD.CopyList,RegIni.CopyList,SfxFx.CopyList.ntx86,APOIMConfig.CopyList,AudioBrand.SBX.CopyList,SfxFxAPOChain.CopyList.ntx86
+AddReg=KSAUD.AddReg,SBAVMon.AddReg,SB1590.AddReg,KS_NAMES.AddReg,AudioBrand.SBX.AddReg
+RegisterDlls=SfxFx.RegisterDlls.ntx86,SfxFxAPOChain.RegisterDlls.ntx86
+
+[SB1590_Device.6.3.ntx86.Interfaces]
+AddInterface=%KSCATEGORY_AUDIO%,%KSNAME_GLOBAL%,        SB1590.Interface.Wave.6.3
+AddInterface=%KSCATEGORY_RENDER%,%KSNAME_GLOBAL%,       SB1590.Interface.Wave.6.3
+AddInterface=%KSCATEGORY_CAPTURE%,%KSNAME_GLOBAL%,      SB1590.Interface.Wave.6.3
+
+[SB1590_Device.6.3.ntx86.Services]
+AddService = KsUSBaud, 0x00000002, KSAUD_Service_Inst
+
+[SB1590_Device.6.3.ntx86.HW]
+AddReg=SB1590HW.AddReg
+DelReg=KSAUDHW.DelReg
+
+;; SB1590 specific amd64.6.3 install*****************************************************************************
+
+[SB1590_Device.6.3.ntamd64.CoInstallers]
+CopyFiles=CoInst.CopyList,APOIM.CopyList.ntamd64
+AddReg=COINST.AddReg
+
+[SB1590_Device.6.3.ntamd64]
+Include=ks.inf, wdmaudio.inf
+Needs=KS.Registration, WDMAUDIO.Registration,mssysfx.CopyFilesAndRegister
+CopyFiles=KSAUD.CopyList,RegIni.CopyList,SfxFx.CopyList.ntamd64,SfxFx32.CopyList.ntamd64,APOIMConfig.CopyList,AudioBrand.SBX.CopyList,SfxFxAPOChain.CopyList.ntamd64,SfxFx32APOChain.CopyList.ntamd64
+AddReg=KSAUD.AddReg,SBAVMon.AddReg,SB1590.AddReg,KS_NAMES.AddReg,AudioBrand.SBX.AddReg
+RegisterDlls=SfxFx.RegisterDlls.ntamd64,SfxFxAPOChain.RegisterDlls.ntamd64
+
+[SB1590_Device.6.3.ntamd64.Interfaces]
+AddInterface=%KSCATEGORY_AUDIO%,%KSNAME_GLOBAL%,        SB1590.Interface.Wave.6.3
+AddInterface=%KSCATEGORY_RENDER%,%KSNAME_GLOBAL%,       SB1590.Interface.Wave.6.3
+AddInterface=%KSCATEGORY_CAPTURE%,%KSNAME_GLOBAL%,      SB1590.Interface.Wave.6.3
+
+[SB1590_Device.6.3.ntamd64.Services]
+AddService = KsUSBaud, 0x00000002, KSAUD_Service_Inst
+
+[SB1590_Device.6.3.ntamd64.HW]
+AddReg=SB1590HW.AddReg
+DelReg=KSAUDHW.DelReg
+
+;; SB1600 specific x86 install*****************************************************************************
+
+[SB1600_Device.ntx86.CoInstallers]
+CopyFiles=CoInst.CopyList,APOIM.CopyList.ntx86
+AddReg=COINST.AddReg
+
+[SB1600_Device.ntx86]
+Include=ks.inf, wdmaudio.inf
+Needs=KS.Registration, WDMAUDIO.Registration,mssysfx.CopyFilesAndRegister
+CopyFiles=KSAUD.CopyList,RegIni.CopyList,SfxFx.CopyList.ntx86,APOIMConfig.CopyList,AudioBrand.SBX.CopyList,SfxFxAPOChain.CopyList.ntx86
+AddReg=KSAUD.AddReg,SB1600.AddReg,KS_NAMES.AddReg,AudioBrand.SBX.AddReg
+RegisterDlls=SfxFx.RegisterDlls.ntx86,SfxFxAPOChain.RegisterDlls.ntx86
+
+[SB1600_Device.ntx86.Interfaces]
+AddInterface=%KSCATEGORY_AUDIO%,%KSNAME_GLOBAL%,        SB1600.Interface.Wave
+AddInterface=%KSCATEGORY_RENDER%,%KSNAME_GLOBAL%,       SB1600.Interface.Wave
+AddInterface=%KSCATEGORY_CAPTURE%,%KSNAME_GLOBAL%,      SB1600.Interface.Wave
+
+[SB1600_Device.ntx86.Services]
+AddService = KsUSBaud, 0x00000002, KSAUD_Service_Inst
+
+[SB1600_Device.ntx86.HW]
+AddReg=SB1600HW.AddReg
+DelReg=KSAUDHW.DelReg
+
+;; SB1600 specific amd64 install*****************************************************************************
+
+[SB1600_Device.ntamd64.CoInstallers]
+CopyFiles=CoInst.CopyList,APOIM.CopyList.ntamd64
+AddReg=COINST.AddReg
+
+[SB1600_Device.ntamd64]
+Include=ks.inf, wdmaudio.inf
+Needs=KS.Registration, WDMAUDIO.Registration,mssysfx.CopyFilesAndRegister
+CopyFiles=KSAUD.CopyList,RegIni.CopyList,SfxFx.CopyList.ntamd64,SfxFx32.CopyList.ntamd64,APOIMConfig.CopyList,AudioBrand.SBX.CopyList,SfxFxAPOChain.CopyList.ntamd64,SfxFx32APOChain.CopyList.ntamd64
+AddReg=KSAUD.AddReg,SB1600.AddReg,KS_NAMES.AddReg,AudioBrand.SBX.AddReg
+RegisterDlls=SfxFx.RegisterDlls.ntamd64,SfxFxAPOChain.RegisterDlls.ntamd64
+
+[SB1600_Device.ntamd64.Interfaces]
+AddInterface=%KSCATEGORY_AUDIO%,%KSNAME_GLOBAL%,        SB1600.Interface.Wave
+AddInterface=%KSCATEGORY_RENDER%,%KSNAME_GLOBAL%,       SB1600.Interface.Wave
+AddInterface=%KSCATEGORY_CAPTURE%,%KSNAME_GLOBAL%,      SB1600.Interface.Wave
+
+[SB1600_Device.ntamd64.Services]
+AddService = KsUSBaud, 0x00000002, KSAUD_Service_Inst
+
+[SB1600_Device.ntamd64.HW]
+AddReg=SB1600HW.AddReg
+DelReg=KSAUDHW.DelReg
+
+;; SB1600 specific x86.6.3 install*****************************************************************************
+
+[SB1600_Device.6.3.ntx86.CoInstallers]
+CopyFiles=CoInst.CopyList,APOIM.CopyList.ntx86
+AddReg=COINST.AddReg
+
+[SB1600_Device.6.3.ntx86]
+Include=ks.inf, wdmaudio.inf
+Needs=KS.Registration, WDMAUDIO.Registration,mssysfx.CopyFilesAndRegister
+CopyFiles=KSAUD.CopyList,RegIni.CopyList,SfxFx.CopyList.ntx86,APOIMConfig.CopyList,AudioBrand.SBX.CopyList,SfxFxAPOChain.CopyList.ntx86
+AddReg=KSAUD.AddReg,SB1600.AddReg,KS_NAMES.AddReg,AudioBrand.SBX.AddReg
+RegisterDlls=SfxFx.RegisterDlls.ntx86,SfxFxAPOChain.RegisterDlls.ntx86
+
+[SB1600_Device.6.3.ntx86.Interfaces]
+AddInterface=%KSCATEGORY_AUDIO%,%KSNAME_GLOBAL%,        SB1600.Interface.Wave.6.3
+AddInterface=%KSCATEGORY_RENDER%,%KSNAME_GLOBAL%,       SB1600.Interface.Wave.6.3
+AddInterface=%KSCATEGORY_CAPTURE%,%KSNAME_GLOBAL%,      SB1600.Interface.Wave.6.3
+
+[SB1600_Device.6.3.ntx86.Services]
+AddService = KsUSBaud, 0x00000002, KSAUD_Service_Inst
+
+[SB1600_Device.6.3.ntx86.HW]
+AddReg=SB1600HW.AddReg
+DelReg=KSAUDHW.DelReg
+
+;; SB1600 specific amd64.6.3 install*****************************************************************************
+
+[SB1600_Device.6.3.ntamd64.CoInstallers]
+CopyFiles=CoInst.CopyList,APOIM.CopyList.ntamd64
+AddReg=COINST.AddReg
+
+[SB1600_Device.6.3.ntamd64]
+Include=ks.inf, wdmaudio.inf
+Needs=KS.Registration, WDMAUDIO.Registration,mssysfx.CopyFilesAndRegister
+CopyFiles=KSAUD.CopyList,RegIni.CopyList,SfxFx.CopyList.ntamd64,SfxFx32.CopyList.ntamd64,APOIMConfig.CopyList,AudioBrand.SBX.CopyList,SfxFxAPOChain.CopyList.ntamd64,SfxFx32APOChain.CopyList.ntamd64
+AddReg=KSAUD.AddReg,SB1600.AddReg,KS_NAMES.AddReg,AudioBrand.SBX.AddReg
+RegisterDlls=SfxFx.RegisterDlls.ntamd64,SfxFxAPOChain.RegisterDlls.ntamd64
+
+[SB1600_Device.6.3.ntamd64.Interfaces]
+AddInterface=%KSCATEGORY_AUDIO%,%KSNAME_GLOBAL%,        SB1600.Interface.Wave.6.3
+AddInterface=%KSCATEGORY_RENDER%,%KSNAME_GLOBAL%,       SB1600.Interface.Wave.6.3
+AddInterface=%KSCATEGORY_CAPTURE%,%KSNAME_GLOBAL%,      SB1600.Interface.Wave.6.3
+
+[SB1600_Device.6.3.ntamd64.Services]
+AddService = KsUSBaud, 0x00000002, KSAUD_Service_Inst
+
+[SB1600_Device.6.3.ntamd64.HW]
+AddReg=SB1600HW.AddReg
+DelReg=KSAUDHW.DelReg
+
+;; SB1610 specific x86 install*****************************************************************************
+
+[SB1610_Device.ntx86.CoInstallers]
+CopyFiles=CoInst.CopyList,APOIM.CopyList.ntx86
+AddReg=COINST.AddReg
+
+[SB1610_Device.ntx86]
+Include=ks.inf, wdmaudio.inf
+Needs=KS.Registration, WDMAUDIO.Registration,mssysfx.CopyFilesAndRegister
+CopyFiles=KSAUD.CopyList,RegIni.CopyList,SfxFx.CopyList.ntx86,APOIMConfig.CopyList,AudioBrand.SBX.CopyList,SfxFxAPOChain.CopyList.ntx86
+AddReg=KSAUD.AddReg,SB1610.AddReg,KS_NAMES.AddReg,AudioBrand.SBX.AddReg
+RegisterDlls=SfxFx.RegisterDlls.ntx86,SfxFxAPOChain.RegisterDlls.ntx86
+
+[SB1610_Device.ntx86.Interfaces]
+AddInterface=%KSCATEGORY_AUDIO%,%KSNAME_GLOBAL%,        SB1610.Interface.Wave
+AddInterface=%KSCATEGORY_RENDER%,%KSNAME_GLOBAL%,       SB1610.Interface.Wave
+AddInterface=%KSCATEGORY_CAPTURE%,%KSNAME_GLOBAL%,      SB1610.Interface.Wave
+
+[SB1610_Device.ntx86.Services]
+AddService = KsUSBaud, 0x00000002, KSAUD_Service_Inst
+
+[SB1610_Device.ntx86.HW]
+AddReg=SB1610HW.AddReg
+DelReg=KSAUDHW.DelReg
+
+;; SB1610 specific amd64 install*****************************************************************************
+
+[SB1610_Device.ntamd64.CoInstallers]
+CopyFiles=CoInst.CopyList,APOIM.CopyList.ntamd64
+AddReg=COINST.AddReg
+
+[SB1610_Device.ntamd64]
+Include=ks.inf, wdmaudio.inf
+Needs=KS.Registration, WDMAUDIO.Registration,mssysfx.CopyFilesAndRegister
+CopyFiles=KSAUD.CopyList,RegIni.CopyList,SfxFx.CopyList.ntamd64,SfxFx32.CopyList.ntamd64,APOIMConfig.CopyList,AudioBrand.SBX.CopyList,SfxFxAPOChain.CopyList.ntamd64,SfxFx32APOChain.CopyList.ntamd64
+AddReg=KSAUD.AddReg,SB1610.AddReg,KS_NAMES.AddReg,AudioBrand.SBX.AddReg
+RegisterDlls=SfxFx.RegisterDlls.ntamd64,SfxFxAPOChain.RegisterDlls.ntamd64
+
+[SB1610_Device.ntamd64.Interfaces]
+AddInterface=%KSCATEGORY_AUDIO%,%KSNAME_GLOBAL%,        SB1610.Interface.Wave
+AddInterface=%KSCATEGORY_RENDER%,%KSNAME_GLOBAL%,       SB1610.Interface.Wave
+AddInterface=%KSCATEGORY_CAPTURE%,%KSNAME_GLOBAL%,      SB1610.Interface.Wave
+
+[SB1610_Device.ntamd64.Services]
+AddService = KsUSBaud, 0x00000002, KSAUD_Service_Inst
+
+[SB1610_Device.ntamd64.HW]
+AddReg=SB1610HW.AddReg
+DelReg=KSAUDHW.DelReg
+
+;; SB1610 specific x86.6.3 install*****************************************************************************
+
+[SB1610_Device.6.3.ntx86.CoInstallers]
+CopyFiles=CoInst.CopyList,APOIM.CopyList.ntx86
+AddReg=COINST.AddReg
+
+[SB1610_Device.6.3.ntx86]
+Include=ks.inf, wdmaudio.inf
+Needs=KS.Registration, WDMAUDIO.Registration,mssysfx.CopyFilesAndRegister
+CopyFiles=KSAUD.CopyList,RegIni.CopyList,SfxFx.CopyList.ntx86,APOIMConfig.CopyList,AudioBrand.SBX.CopyList,SfxFxAPOChain.CopyList.ntx86
+AddReg=KSAUD.AddReg,SB1610.AddReg,KS_NAMES.AddReg,AudioBrand.SBX.AddReg
+RegisterDlls=SfxFx.RegisterDlls.ntx86,SfxFxAPOChain.RegisterDlls.ntx86
+
+[SB1610_Device.6.3.ntx86.Interfaces]
+AddInterface=%KSCATEGORY_AUDIO%,%KSNAME_GLOBAL%,        SB1610.Interface.Wave.6.3
+AddInterface=%KSCATEGORY_RENDER%,%KSNAME_GLOBAL%,       SB1610.Interface.Wave.6.3
+AddInterface=%KSCATEGORY_CAPTURE%,%KSNAME_GLOBAL%,      SB1610.Interface.Wave.6.3
+
+[SB1610_Device.6.3.ntx86.Services]
+AddService = KsUSBaud, 0x00000002, KSAUD_Service_Inst
+
+[SB1610_Device.6.3.ntx86.HW]
+AddReg=SB1610HW.AddReg
+DelReg=KSAUDHW.DelReg
+
+;; SB1610 specific amd64.6.3 install*****************************************************************************
+
+[SB1610_Device.6.3.ntamd64.CoInstallers]
+CopyFiles=CoInst.CopyList,APOIM.CopyList.ntamd64
+AddReg=COINST.AddReg
+
+[SB1610_Device.6.3.ntamd64]
+Include=ks.inf, wdmaudio.inf
+Needs=KS.Registration, WDMAUDIO.Registration,mssysfx.CopyFilesAndRegister
+CopyFiles=KSAUD.CopyList,RegIni.CopyList,SfxFx.CopyList.ntamd64,SfxFx32.CopyList.ntamd64,APOIMConfig.CopyList,AudioBrand.SBX.CopyList,SfxFxAPOChain.CopyList.ntamd64,SfxFx32APOChain.CopyList.ntamd64
+AddReg=KSAUD.AddReg,SB1610.AddReg,KS_NAMES.AddReg,AudioBrand.SBX.AddReg
+RegisterDlls=SfxFx.RegisterDlls.ntamd64,SfxFxAPOChain.RegisterDlls.ntamd64
+
+[SB1610_Device.6.3.ntamd64.Interfaces]
+AddInterface=%KSCATEGORY_AUDIO%,%KSNAME_GLOBAL%,        SB1610.Interface.Wave.6.3
+AddInterface=%KSCATEGORY_RENDER%,%KSNAME_GLOBAL%,       SB1610.Interface.Wave.6.3
+AddInterface=%KSCATEGORY_CAPTURE%,%KSNAME_GLOBAL%,      SB1610.Interface.Wave.6.3
+
+[SB1610_Device.6.3.ntamd64.Services]
+AddService = KsUSBaud, 0x00000002, KSAUD_Service_Inst
+
+[SB1610_Device.6.3.ntamd64.HW]
+AddReg=SB1610HW.AddReg
+DelReg=KSAUDHW.DelReg
+
+
+;; SB1700 specific x86 install*****************************************************************************
+
+[SB1700_Device.ntx86.CoInstallers]
+CopyFiles=CoInst.CopyList,APOIM.CopyList.ntx86
+AddReg=COINST.AddReg
+
+[SB1700_Device.ntx86]
+Include=ks.inf, wdmaudio.inf
+Needs=KS.Registration, WDMAUDIO.Registration,mssysfx.CopyFilesAndRegister
+CopyFiles=KSAUD.CopyList,RegIni.CopyList,SfxFx.CopyList.ntx86,APOIMConfig.CopyList,AudioBrand.SBX.CopyList,SfxFxAPOChain.CopyList.ntx86
+AddReg=KSAUD.AddReg,SBAVMon.AddReg,SB1700.AddReg,KS_NAMES.AddReg,AudioBrand.SBX.AddReg
+RegisterDlls=SfxFx.RegisterDlls.ntx86,SfxFxAPOChain.RegisterDlls.ntx86
+
+[SB1700_Device.ntx86.Interfaces]
+AddInterface=%KSCATEGORY_AUDIO%,%KSNAME_GLOBAL%,        SB1700.Interface.Wave
+AddInterface=%KSCATEGORY_RENDER%,%KSNAME_GLOBAL%,       SB1700.Interface.Wave
+AddInterface=%KSCATEGORY_CAPTURE%,%KSNAME_GLOBAL%,      SB1700.Interface.Wave
+
+[SB1700_Device.ntx86.Services]
+AddService = KsUSBaud, 0x00000002, KSAUD_Service_Inst
+
+[SB1700_Device.ntx86.HW]
+AddReg=SB1700HW.AddReg
+DelReg=KSAUDHW.DelReg
+
+;; SB1700 specific amd64 install*****************************************************************************
+
+[SB1700_Device.ntamd64.CoInstallers]
+CopyFiles=CoInst.CopyList,APOIM.CopyList.ntamd64
+AddReg=COINST.AddReg
+
+[SB1700_Device.ntamd64]
+Include=ks.inf, wdmaudio.inf
+Needs=KS.Registration, WDMAUDIO.Registration,mssysfx.CopyFilesAndRegister
+CopyFiles=KSAUD.CopyList,RegIni.CopyList,SfxFx.CopyList.ntamd64,SfxFx32.CopyList.ntamd64,APOIMConfig.CopyList,AudioBrand.SBX.CopyList,SfxFxAPOChain.CopyList.ntamd64,SfxFx32APOChain.CopyList.ntamd64
+AddReg=KSAUD.AddReg,SBAVMon.AddReg,SB1700.AddReg,KS_NAMES.AddReg,AudioBrand.SBX.AddReg
+RegisterDlls=SfxFx.RegisterDlls.ntamd64,SfxFxAPOChain.RegisterDlls.ntamd64
+
+[SB1700_Device.ntamd64.Interfaces]
+AddInterface=%KSCATEGORY_AUDIO%,%KSNAME_GLOBAL%,        SB1700.Interface.Wave
+AddInterface=%KSCATEGORY_RENDER%,%KSNAME_GLOBAL%,       SB1700.Interface.Wave
+AddInterface=%KSCATEGORY_CAPTURE%,%KSNAME_GLOBAL%,      SB1700.Interface.Wave
+
+[SB1700_Device.ntamd64.Services]
+AddService = KsUSBaud, 0x00000002, KSAUD_Service_Inst
+
+[SB1700_Device.ntamd64.HW]
+AddReg=SB1700HW.AddReg
+DelReg=KSAUDHW.DelReg
+
+;; SB1700 specific x86.6.3 install*****************************************************************************
+
+[SB1700_Device.6.3.ntx86.CoInstallers]
+CopyFiles=CoInst.CopyList,APOIM.CopyList.ntx86
+AddReg=COINST.AddReg
+
+[SB1700_Device.6.3.ntx86]
+Include=ks.inf, wdmaudio.inf
+Needs=KS.Registration, WDMAUDIO.Registration,mssysfx.CopyFilesAndRegister
+CopyFiles=KSAUD.CopyList,RegIni.CopyList,SfxFx.CopyList.ntx86,APOIMConfig.CopyList,AudioBrand.SBX.CopyList,SfxFxAPOChain.CopyList.ntx86
+AddReg=KSAUD.AddReg,SBAVMon.AddReg,SB1700.AddReg,KS_NAMES.AddReg,AudioBrand.SBX.AddReg
+RegisterDlls=SfxFx.RegisterDlls.ntx86,SfxFxAPOChain.RegisterDlls.ntx86
+
+[SB1700_Device.6.3.ntx86.Interfaces]
+AddInterface=%KSCATEGORY_AUDIO%,%KSNAME_GLOBAL%,        SB1700.Interface.Wave.6.3
+AddInterface=%KSCATEGORY_RENDER%,%KSNAME_GLOBAL%,       SB1700.Interface.Wave.6.3
+AddInterface=%KSCATEGORY_CAPTURE%,%KSNAME_GLOBAL%,      SB1700.Interface.Wave.6.3
+
+[SB1700_Device.6.3.ntx86.Services]
+AddService = KsUSBaud, 0x00000002, KSAUD_Service_Inst
+
+[SB1700_Device.6.3.ntx86.HW]
+AddReg=SB1700HW.AddReg
+DelReg=KSAUDHW.DelReg
+
+;; SB1700 specific amd64.6.3 install*****************************************************************************
+
+[SB1700_Device.6.3.ntamd64.CoInstallers]
+CopyFiles=CoInst.CopyList,APOIM.CopyList.ntamd64
+AddReg=COINST.AddReg
+
+[SB1700_Device.6.3.ntamd64]
+Include=ks.inf, wdmaudio.inf
+Needs=KS.Registration, WDMAUDIO.Registration,mssysfx.CopyFilesAndRegister
+CopyFiles=KSAUD.CopyList,RegIni.CopyList,SfxFx.CopyList.ntamd64,SfxFx32.CopyList.ntamd64,APOIMConfig.CopyList,AudioBrand.SBX.CopyList,SfxFxAPOChain.CopyList.ntamd64,SfxFx32APOChain.CopyList.ntamd64
+AddReg=KSAUD.AddReg,SBAVMon.AddReg,SB1700.AddReg,KS_NAMES.AddReg,AudioBrand.SBX.AddReg
+RegisterDlls=SfxFx.RegisterDlls.ntamd64,SfxFxAPOChain.RegisterDlls.ntamd64
+
+[SB1700_Device.6.3.ntamd64.Interfaces]
+AddInterface=%KSCATEGORY_AUDIO%,%KSNAME_GLOBAL%,        SB1700.Interface.Wave.6.3
+AddInterface=%KSCATEGORY_RENDER%,%KSNAME_GLOBAL%,       SB1700.Interface.Wave.6.3
+AddInterface=%KSCATEGORY_CAPTURE%,%KSNAME_GLOBAL%,      SB1700.Interface.Wave.6.3
+
+[SB1700_Device.6.3.ntamd64.Services]
+AddService = KsUSBaud, 0x00000002, KSAUD_Service_Inst
+
+[SB1700_Device.6.3.ntamd64.HW]
+AddReg=SB1700HW.AddReg
+DelReg=KSAUDHW.DelReg
+
+;; Register Dlls **********************************************************************************
+
+[SfxFx.RegisterDlls.ntx86]
+11,,KSUSBAPO32.dll,1
+11,,KSUSBPPLD32.dll,1
+11,,KSUSBSPI32.dll,1
+
+[SfxFxAPOChain.RegisterDlls.ntx86]
+11,,KSUSBWrap32.dll,1 
+11,,KSUSBDGFX32.dll,1
+
+;[SfxFxMalc.RegisterDlls.ntx86]
+;11,,KsUSBMalc32.dll,1
+
+[SfxFx.RegisterDlls.ntamd64]
+16425,,KSUSBAPO32.dll,1
+11,,KSUSBAPO64.dll,1
+11,,KSUSBPPLD64.dll,1
+16425,,KSUSBSPI32.dll,1
+11,,KSUSBSPI64.dll,1
+
+[SfxFxAPOChain.RegisterDlls.ntamd64]
+11,,KSUSBWrap64.dll,1  
+11,,KSUSBDGFX64.dll,1
+
+[SysFx1580.AddReg]
+HKR,"FX\\0",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\0",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\0",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_Association%,,%KSNODETYPE_SPEAKER%
+
+HKR,"FX\\1",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\1",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\1",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_Association%,,%KSNODETYPE_SPDIF_INTERFACE%
+
+HKR,"FX\\2",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\2",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\2",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\2",%PKEY_SYSFX_UiClsid%,,%MS_FX_UI_CLSID%
+HKR,"FX\\2",%PKEY_SYSFX_Association%,,%KSNODETYPE_PROCESSING_MICROPHONE_ARRAY%
+
+HKR,"FX\\3",%PKEY_DisplayName%,,%MS_FX_FriendlyName%
+HKR,"FX\\3",%PKEY_SYSFX_PreMixClsid%,,%MS_FX_PREMIX_CLSID%
+HKR,"FX\\3",%PKEY_SYSFX_PostMixClsid%,,%MS_FX_POSTMIX_CLSID%
+;HKR,"FX\\3",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\3",%PKEY_SYSFX_Association%,,%KSNODETYPE_LINE_CONNECTOR%
+
+HKR,"FX\\4",%PKEY_DisplayName%,,%MS_FX_FriendlyName%
+HKR,"FX\\4",%PKEY_SYSFX_PreMixClsid%,,%MS_FX_PREMIX_CLSID%
+HKR,"FX\\4",%PKEY_SYSFX_PostMixClsid%,,%MS_FX_PREMIX_CLSID%
+;HKR,"FX\\4",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\4",%PKEY_SYSFX_Association%,,%KSNODETYPE_DIGITAL_AUDIO_INTERFACE%
+
+HKR,"FX\\5",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\5",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\5",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\5",%PKEY_SYSFX_UiClsid%,,%MS_FX_UI_CLSID%
+HKR,"FX\\5",%PKEY_SYSFX_Association%,,%KSNODETYPE_MICROPHONE_ARRAY%
+
+;Scout Mode (Speaker)
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT0%,1,0b,00,63,00,00,01,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT1%,1,0b,00,63,00,00,01,00,00,01,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT2%,1,04,00,00,00,01,00,00,00,66,66,66,3f
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT3%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT4%,1,0b,00,63,00,00,01,00,00,01,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT5%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT10%,1,04,00,00,00,01,00,00,00,00,00,00,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT11%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT12%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT13%,1,04,00,00,00,01,00,00,00,00,00,00,c0
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT14%,1,04,00,00,00,01,00,00,00,00,00,00,c0
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT15%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT16%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT17%,1,04,00,00,00,01,00,00,00,00,00,80,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT18%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT19%,1,04,00,00,00,01,00,00,00,00,00,00,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT20%,1,0b,00,63,00,00,01,00,00,00,00,00,00
+
+;Scout Mode (SPDIF OUT)
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT0%,1,0b,00,63,00,00,01,00,00,00,00,00,00
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT1%,1,0b,00,63,00,00,01,00,00,01,00,00,00
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT2%,1,04,00,00,00,01,00,00,00,66,66,66,3f
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT3%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT4%,1,0b,00,63,00,00,01,00,00,01,00,00,00
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT5%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT10%,1,04,00,00,00,01,00,00,00,00,00,00,40
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT11%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT12%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT13%,1,04,00,00,00,01,00,00,00,00,00,00,c0
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT14%,1,04,00,00,00,01,00,00,00,00,00,00,c0
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT15%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT16%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT17%,1,04,00,00,00,01,00,00,00,00,00,80,40
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT18%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT19%,1,04,00,00,00,01,00,00,00,00,00,00,40
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT20%,1,0b,00,63,00,00,01,00,00,00,00,00,00
+
+; for WIn 8.1 OS
+[SysFx1580.6.3.AddReg]
+HKR,"FX\\0",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\0",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\0",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_Association%,,%KSNODETYPE_SPEAKER%
+HKR,"FX\\0",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\0",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+HKR,"FX\\0",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\0",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+
+HKR,"FX\\1",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\1",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\1",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_Association%,,%KSNODETYPE_SPDIF_INTERFACE%
+HKR,"FX\\1",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\1",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+HKR,"FX\\1",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\1",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+
+HKR,"FX\\2",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\2",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\2",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\2",%PKEY_SYSFX_UiClsid%,,%MS_FX_UI_CLSID%
+HKR,"FX\\2",%PKEY_SYSFX_Association%,,%KSNODETYPE_PROCESSING_MICROPHONE_ARRAY%
+HKR,"FX\\2",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\2",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+HKR,"FX\\2",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\2",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+
+HKR,"FX\\3",%PKEY_DisplayName%,,%MS_FX_FriendlyName%
+HKR,"FX\\3",%PKEY_SYSFX_PreMixClsid%,,%MS_FX_PREMIX_CLSID%
+HKR,"FX\\3",%PKEY_SYSFX_PostMixClsid%,,%MS_FX_POSTMIX_CLSID%
+;HKR,"FX\\3",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\3",%PKEY_SYSFX_Association%,,%KSNODETYPE_LINE_CONNECTOR%
+HKR,"FX\\3",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\3",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+HKR,"FX\\3",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\3",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+
+HKR,"FX\\4",%PKEY_DisplayName%,,%MS_FX_FriendlyName%
+HKR,"FX\\4",%PKEY_SYSFX_PreMixClsid%,,%MS_FX_PREMIX_CLSID%
+HKR,"FX\\4",%PKEY_SYSFX_PostMixClsid%,,%MS_FX_PREMIX_CLSID%
+;HKR,"FX\\4",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\4",%PKEY_SYSFX_Association%,,%KSNODETYPE_DIGITAL_AUDIO_INTERFACE%
+HKR,"FX\\4",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\4",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+HKR,"FX\\4",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\4",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+
+HKR,"FX\\5",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\5",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\5",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\5",%PKEY_SYSFX_UiClsid%,,%MS_FX_UI_CLSID%
+HKR,"FX\\5",%PKEY_SYSFX_Association%,,%KSNODETYPE_MICROPHONE_ARRAY%
+HKR,"FX\\5",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\5",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+HKR,"FX\\5",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\5",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+
+;Scout Mode (Speaker)
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT0%,1,0b,00,63,00,00,01,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT1%,1,0b,00,63,00,00,01,00,00,01,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT2%,1,04,00,00,00,01,00,00,00,66,66,66,3f
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT3%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT4%,1,0b,00,63,00,00,01,00,00,01,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT5%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT10%,1,04,00,00,00,01,00,00,00,00,00,00,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT11%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT12%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT13%,1,04,00,00,00,01,00,00,00,00,00,00,c0
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT14%,1,04,00,00,00,01,00,00,00,00,00,00,c0
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT15%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT16%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT17%,1,04,00,00,00,01,00,00,00,00,00,80,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT18%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT19%,1,04,00,00,00,01,00,00,00,00,00,00,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT20%,1,0b,00,63,00,00,01,00,00,00,00,00,00
+
+;Scout Mode (SPDIF OUT)
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT0%,1,0b,00,63,00,00,01,00,00,00,00,00,00
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT1%,1,0b,00,63,00,00,01,00,00,01,00,00,00
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT2%,1,04,00,00,00,01,00,00,00,66,66,66,3f
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT3%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT4%,1,0b,00,63,00,00,01,00,00,01,00,00,00
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT5%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT10%,1,04,00,00,00,01,00,00,00,00,00,00,40
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT11%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT12%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT13%,1,04,00,00,00,01,00,00,00,00,00,00,c0
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT14%,1,04,00,00,00,01,00,00,00,00,00,00,c0
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT15%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT16%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT17%,1,04,00,00,00,01,00,00,00,00,00,80,40
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT18%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT19%,1,04,00,00,00,01,00,00,00,00,00,00,40
+HKR,"FX\\1",%CTPKEY_GUID_SCOUT20%,1,0b,00,63,00,00,01,00,00,00,00,00,00
+
+[SysFx1590.AddReg]
+HKR,"FX\\0",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\0",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\0",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_Association%,,%KSNODETYPE_SPEAKER%
+
+; Internal Microphone effects
+HKR,"FX\\1",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\1",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\1",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_Association%,,%KSNODETYPE_MICROPHONE_ARRAY%
+
+; Aux In
+HKR,"FX\\2",%PKEY_DisplayName%,,%MS_FX_FriendlyName%
+HKR,"FX\\2",%PKEY_SYSFX_PreMixClsid%,,%MS_FX_PREMIX_CLSID%
+HKR,"FX\\2",%PKEY_SYSFX_PostMixClsid%,,%MS_FX_POSTMIX_CLSID%
+;HKR,"FX\\2",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\2",%PKEY_SYSFX_Association%,,%KSNODETYPE_LINE_CONNECTOR%
+
+; Ext Mic
+HKR,"FX\\3",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\3",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\3",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\3",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\3",%PKEY_SYSFX_Association%,,%KSNODETYPE_MICROPHONE%
+
+; Spdif In
+HKR,"FX\\4",%PKEY_DisplayName%,,%MS_FX_FriendlyName%
+HKR,"FX\\4",%PKEY_SYSFX_PreMixClsid%,,%MS_FX_PREMIX_CLSID%
+HKR,"FX\\4",%PKEY_SYSFX_PostMixClsid%,,%MS_FX_POSTMIX_CLSID%
+;HKR,"FX\\4",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\4",%PKEY_SYSFX_Association%,,%KSNODETYPE_SPDIF_INTERFACE%
+
+; Bluetooth
+HKR,"FX\\5",%PKEY_DisplayName%,,%MS_FX_FriendlyName%
+HKR,"FX\\5",%PKEY_SYSFX_PreMixClsid%,,%MS_FX_PREMIX_CLSID%
+HKR,"FX\\5",%PKEY_SYSFX_PostMixClsid%,,%MS_FX_POSTMIX_CLSID%
+;HKR,"FX\\5",%PKEY_SYSFX_UiClsid%,,%MS_FX_UI_CLSID%
+HKR,"FX\\5",%PKEY_SYSFX_Association%,,%KSNODETYPE_DOWN_LINE_PHONE%
+
+; WUH
+HKR,"FX\\6",%PKEY_DisplayName%,,%MS_FX_FriendlyName%
+HKR,"FX\\6",%PKEY_SYSFX_PreMixClsid%,,%MS_FX_PREMIX_CLSID%
+HKR,"FX\\6",%PKEY_SYSFX_PostMixClsid%,,%MS_FX_POSTMIX_CLSID%
+;HKR,"FX\\6",PKEY_SYSFX_UiClsid%,,%MS_FX_UI_CLSID%
+HKR,"FX\\6",%PKEY_SYSFX_Association%,,%KSNODETYPE_DIGITAL_AUDIO_INTERFACE%
+
+; for WIn 8.1 OS
+[SysFx1590.6.3.AddReg]
+HKR,"FX\\0",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\0",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\0",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_Association%,,%KSNODETYPE_SPEAKER%
+HKR,"FX\\0",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\0",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+HKR,"FX\\0",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\0",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+
+; Internal Microphone effects
+HKR,"FX\\1",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\1",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\1",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_Association%,,%KSNODETYPE_MICROPHONE_ARRAY%
+HKR,"FX\\1",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\1",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+HKR,"FX\\1",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\1",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+
+; Aux In
+HKR,"FX\\2",%PKEY_DisplayName%,,%MS_FX_FriendlyName%
+HKR,"FX\\2",%PKEY_SYSFX_PreMixClsid%,,%MS_FX_PREMIX_CLSID%
+HKR,"FX\\2",%PKEY_SYSFX_PostMixClsid%,,%MS_FX_POSTMIX_CLSID%
+;HKR,"FX\\2",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\2",%PKEY_SYSFX_Association%,,%KSNODETYPE_LINE_CONNECTOR%
+HKR,"FX\\2",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\2",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+HKR,"FX\\2",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\2",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+
+; Ext Mic
+HKR,"FX\\3",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\3",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\3",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\3",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\3",%PKEY_SYSFX_Association%,,%KSNODETYPE_MICROPHONE%
+HKR,"FX\\3",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\3",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+HKR,"FX\\3",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\3",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+
+; Spdif In
+HKR,"FX\\4",%PKEY_DisplayName%,,%MS_FX_FriendlyName%
+HKR,"FX\\4",%PKEY_SYSFX_PreMixClsid%,,%MS_FX_PREMIX_CLSID%
+HKR,"FX\\4",%PKEY_SYSFX_PostMixClsid%,,%MS_FX_POSTMIX_CLSID%
+;HKR,"FX\\4",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\4",%PKEY_SYSFX_Association%,,%KSNODETYPE_SPDIF_INTERFACE%
+HKR,"FX\\4",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\4",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+HKR,"FX\\4",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\4",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+
+; Bluetooth
+HKR,"FX\\5",%PKEY_DisplayName%,,%MS_FX_FriendlyName%
+HKR,"FX\\5",%PKEY_SYSFX_PreMixClsid%,,%MS_FX_PREMIX_CLSID%
+HKR,"FX\\5",%PKEY_SYSFX_PostMixClsid%,,%MS_FX_POSTMIX_CLSID%
+;HKR,"FX\\5",%PKEY_SYSFX_UiClsid%,,%MS_FX_UI_CLSID%
+HKR,"FX\\5",%PKEY_SYSFX_Association%,,%KSNODETYPE_DOWN_LINE_PHONE%
+HKR,"FX\\5",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\5",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+HKR,"FX\\5",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\5",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+
+; WUH
+HKR,"FX\\6",%PKEY_DisplayName%,,%MS_FX_FriendlyName%
+HKR,"FX\\6",%PKEY_SYSFX_PreMixClsid%,,%MS_FX_PREMIX_CLSID%
+HKR,"FX\\6",%PKEY_SYSFX_PostMixClsid%,,%MS_FX_POSTMIX_CLSID%
+;HKR,"FX\\6",PKEY_SYSFX_UiClsid%,,%MS_FX_UI_CLSID%
+HKR,"FX\\6",%PKEY_SYSFX_Association%,,%KSNODETYPE_DIGITAL_AUDIO_INTERFACE%
+HKR,"FX\\6",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\6",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+HKR,"FX\\6",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\6",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+
+[SysFx1600.AddReg]
+HKR,"FX\\0",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\0",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\0",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_Association%,,%KSNODETYPE_SPEAKER%
+;SBX Surround Enable
+HKR,"FX\\0",%CTPKEY_GUID_SBXSURROUND_ENABLE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+;SBX_CMSS3D_Immersion
+HKR,"FX\\0",%CTPKEY_GUID_SBXSURROUND_IMMERSION%,1,04,00,00,00,01,00,00,00,cd,cc,cc,3e
+;SBX_Crystalizer_Enable
+HKR,"FX\\0",%CTPKEY_GUID_SBXCRYSTALIZER_ENABLE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+;SBX_Crystalizer_Level
+HKR,"FX\\0",%CTPKEY_GUID_SBXCRYSTALIZER_LEVEL%,1,04,00,00,00,01,00,00,00,66,66,26,3f
+;SBX_Crystalizer_PreAttenuation
+HKR,"FX\\0",%CTPKEY_GUID_SBXCRYSTALIZER_PREATTENUATION%,1,04,00,00,00,01,00,00,00,00,00,80,3f
+;set speaker setting to headphone
+HKR,"FX\\0",%CTPKEY_GUID_SPEAKERMODE%,0x00010001,0x00000002
+HKR,"FX\\0",%CTPKEY_GUID_SPEAKER_HEADPHONEOVERRIDE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+
+; Microphone effects
+HKR,"FX\\1",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\1",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\1",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_Association%,,%KSNODETYPE_MICROPHONE%
+HKR,"FX\\1",%CTPKEY_GUID_CRYSTALVOICENR_ENABLE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+
+; MicArray distance 
+HKR,"FX\\1",%CTPKEY_MicArray_InterMicDistance%,1,04,00,63,00,31,08,2C,3D,31,08,2C,3D
+
+;Scout Mode (Speaker)
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT0%,1,0b,00,63,00,00,01,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT1%,1,0b,00,63,00,00,01,00,00,01,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT2%,1,04,00,00,00,01,00,00,00,66,66,66,3f
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT3%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT4%,1,0b,00,63,00,00,01,00,00,01,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT5%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT10%,1,04,00,00,00,01,00,00,00,00,00,00,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT11%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT12%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT13%,1,04,00,00,00,01,00,00,00,00,00,00,c0
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT14%,1,04,00,00,00,01,00,00,00,00,00,00,c0
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT15%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT16%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT17%,1,04,00,00,00,01,00,00,00,00,00,80,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT18%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT19%,1,04,00,00,00,01,00,00,00,00,00,00,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT20%,1,0b,00,63,00,00,01,00,00,00,00,00,00
+
+; for WIn 8.1 OS
+[SysFx1600.6.3.AddReg]
+HKR,"FX\\0",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\0",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\0",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+;HKR,"FX\\0",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_Association%,,%KSNODETYPE_SPEAKER%
+HKR,"FX\\0",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\0",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+;SBX Surround Enable
+HKR,"FX\\0",%CTPKEY_GUID_SBXSURROUND_ENABLE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+;SBX_CMSS3D_Immersion
+HKR,"FX\\0",%CTPKEY_GUID_SBXSURROUND_IMMERSION%,1,04,00,00,00,01,00,00,00,cd,cc,cc,3e
+;SBX_Crystalizer_Enable
+HKR,"FX\\0",%CTPKEY_GUID_SBXCRYSTALIZER_ENABLE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+;SBX_Crystalizer_Level
+HKR,"FX\\0",%CTPKEY_GUID_SBXCRYSTALIZER_LEVEL%,1,04,00,00,00,01,00,00,00,66,66,26,3f
+;SBX_Crystalizer_PreAttenuation
+HKR,"FX\\0",%CTPKEY_GUID_SBXCRYSTALIZER_PREATTENUATION%,1,04,00,00,00,01,00,00,00,00,00,80,3f
+;set speaker setting to headphone
+HKR,"FX\\0",%CTPKEY_GUID_SPEAKERMODE%,0x00010001,0x00000002
+HKR,"FX\\0",%CTPKEY_GUID_SPEAKER_HEADPHONEOVERRIDE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+
+; Microphone effects
+HKR,"FX\\1",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\1",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\1",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+;HKR,"FX\\1",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_Association%,,%KSNODETYPE_MICROPHONE%
+HKR,"FX\\1",%CTPKEY_GUID_CRYSTALVOICENR_ENABLE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+
+; MicArray distance 
+HKR,"FX\\1",%CTPKEY_MicArray_InterMicDistance%,1,04,00,63,00,31,08,2C,3D,31,08,2C,3D
+HKR,"FX\\1",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\1",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+
+;Scout Mode (Speaker)
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT0%,1,0b,00,63,00,00,01,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT1%,1,0b,00,63,00,00,01,00,00,01,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT2%,1,04,00,00,00,01,00,00,00,66,66,66,3f
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT3%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT4%,1,0b,00,63,00,00,01,00,00,01,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT5%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT10%,1,04,00,00,00,01,00,00,00,00,00,00,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT11%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT12%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT13%,1,04,00,00,00,01,00,00,00,00,00,00,c0
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT14%,1,04,00,00,00,01,00,00,00,00,00,00,c0
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT15%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT16%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT17%,1,04,00,00,00,01,00,00,00,00,00,80,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT18%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT19%,1,04,00,00,00,01,00,00,00,00,00,00,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT20%,1,0b,00,63,00,00,01,00,00,00,00,00,00
+
+[SysFx1610.AddReg]
+HKR,"FX\\0",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\0",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\0",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_Association%,,%KSNODETYPE_SPEAKER%
+;SBX Surround Enable
+HKR,"FX\\0",%CTPKEY_GUID_SBXSURROUND_ENABLE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+;SBX_CMSS3D_Immersion
+HKR,"FX\\0",%CTPKEY_GUID_SBXSURROUND_IMMERSION%,1,04,00,00,00,01,00,00,00,cd,cc,cc,3e
+;SBX_Crystalizer_Enable
+HKR,"FX\\0",%CTPKEY_GUID_SBXCRYSTALIZER_ENABLE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+;SBX_Crystalizer_Level
+HKR,"FX\\0",%CTPKEY_GUID_SBXCRYSTALIZER_LEVEL%,1,04,00,00,00,01,00,00,00,66,66,26,3f
+;SBX_Crystalizer_PreAttenuation
+HKR,"FX\\0",%CTPKEY_GUID_SBXCRYSTALIZER_PREATTENUATION%,1,04,00,00,00,01,00,00,00,00,00,80,3f
+;set speaker setting to headphone
+HKR,"FX\\0",%CTPKEY_GUID_SPEAKERMODE%,0x10001,0x00000002
+HKR,"FX\\0",%CTPKEY_GUID_SPEAKER_HEADPHONEOVERRIDE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+
+;Scout Mode (Speaker)
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT0%,1,0b,00,63,00,00,01,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT1%,1,0b,00,63,00,00,01,00,00,01,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT2%,1,04,00,00,00,01,00,00,00,66,66,66,3f
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT3%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT4%,1,0b,00,63,00,00,01,00,00,01,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT5%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT10%,1,04,00,00,00,01,00,00,00,00,00,00,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT11%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT12%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT13%,1,04,00,00,00,01,00,00,00,00,00,00,c0
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT14%,1,04,00,00,00,01,00,00,00,00,00,00,c0
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT15%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT16%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT17%,1,04,00,00,00,01,00,00,00,00,00,80,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT18%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT19%,1,04,00,00,00,01,00,00,00,00,00,00,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT20%,1,0b,00,63,00,00,01,00,00,00,00,00,00
+
+; Microphone effects 
+HKR,"FX\\1",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\1",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\1",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_Association%,,%KSNODETYPE_MICROPHONE%
+HKR,"FX\\1",%CTPKEY_GUID_CRYSTALVOICENR_ENABLE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+
+; MicArray distance 
+;HKR,"FX\\1",%CTPKEY_MicArray_InterMicDistance%,1,04,00,63,00,31,08,2C,3D,31,08,2C,3D
+
+; for WIn 8.1 OS
+[SysFx1610.6.3.AddReg]
+HKR,"FX\\0",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\0",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\0",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+;HKR,"FX\\0",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_Association%,,%KSNODETYPE_SPEAKER%
+HKR,"FX\\0",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\0",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+;SBX Surround Enable
+HKR,"FX\\0",%CTPKEY_GUID_SBXSURROUND_ENABLE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+;SBX_CMSS3D_Immersion
+HKR,"FX\\0",%CTPKEY_GUID_SBXSURROUND_IMMERSION%,1,04,00,00,00,01,00,00,00,cd,cc,cc,3e
+;SBX_Crystalizer_Enable
+HKR,"FX\\0",%CTPKEY_GUID_SBXCRYSTALIZER_ENABLE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+;SBX_Crystalizer_Level
+HKR,"FX\\0",%CTPKEY_GUID_SBXCRYSTALIZER_LEVEL%,1,04,00,00,00,01,00,00,00,66,66,26,3f
+;SBX_Crystalizer_PreAttenuation
+HKR,"FX\\0",%CTPKEY_GUID_SBXCRYSTALIZER_PREATTENUATION%,1,04,00,00,00,01,00,00,00,00,00,80,3f
+;set speaker setting to headphone
+HKR,"FX\\0",%CTPKEY_GUID_SPEAKERMODE%,0x10001,0x00000002
+HKR,"FX\\0",%CTPKEY_GUID_SPEAKER_HEADPHONEOVERRIDE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+
+;Scout Mode (Speaker)
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT0%,1,0b,00,63,00,00,01,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT1%,1,0b,00,63,00,00,01,00,00,01,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT2%,1,04,00,00,00,01,00,00,00,66,66,66,3f
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT3%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT4%,1,0b,00,63,00,00,01,00,00,01,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT5%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT10%,1,04,00,00,00,01,00,00,00,00,00,00,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT11%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT12%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT13%,1,04,00,00,00,01,00,00,00,00,00,00,c0
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT14%,1,04,00,00,00,01,00,00,00,00,00,00,c0
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT15%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT16%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT17%,1,04,00,00,00,01,00,00,00,00,00,80,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT18%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT19%,1,04,00,00,00,01,00,00,00,00,00,00,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT20%,1,0b,00,63,00,00,01,00,00,00,00,00,00
+
+; Microphone effects 
+HKR,"FX\\1",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\1",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\1",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+HKR,"FX\\1",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\1",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+;HKR,"FX\\1",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_Association%,,%KSNODETYPE_MICROPHONE%
+HKR,"FX\\1",%CTPKEY_GUID_CRYSTALVOICENR_ENABLE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+
+[SysFx0330.AddReg]
+HKR,"FX\\0",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\0",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\0",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_Association%,,%KSNODETYPE_SPEAKER%
+;SBX Surround Enable
+HKR,"FX\\0",%CTPKEY_GUID_SBXSURROUND_ENABLE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+;SBX_CMSS3D_Immersion
+HKR,"FX\\0",%CTPKEY_GUID_SBXSURROUND_IMMERSION%,1,04,00,00,00,01,00,00,00,cd,cc,cc,3e
+;SBX_Crystalizer_Enable
+HKR,"FX\\0",%CTPKEY_GUID_SBXCRYSTALIZER_ENABLE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+;SBX_Crystalizer_Level
+HKR,"FX\\0",%CTPKEY_GUID_SBXCRYSTALIZER_LEVEL%,1,04,00,00,00,01,00,00,00,66,66,26,3f
+;SBX_Crystalizer_PreAttenuation
+HKR,"FX\\0",%CTPKEY_GUID_SBXCRYSTALIZER_PREATTENUATION%,1,04,00,00,00,01,00,00,00,00,00,80,3f
+;set speaker setting to headphone
+HKR,"FX\\0",%CTPKEY_GUID_SPEAKERMODE%,0x10001,0x00000002
+HKR,"FX\\0",%CTPKEY_GUID_SPEAKER_HEADPHONEOVERRIDE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+
+;Scout Mode (Speaker)
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT0%,1,0b,00,63,00,00,01,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT1%,1,0b,00,63,00,00,01,00,00,01,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT2%,1,04,00,00,00,01,00,00,00,66,66,66,3f
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT3%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT4%,1,0b,00,63,00,00,01,00,00,01,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT5%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT10%,1,04,00,00,00,01,00,00,00,00,00,00,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT11%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT12%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT13%,1,04,00,00,00,01,00,00,00,00,00,00,c0
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT14%,1,04,00,00,00,01,00,00,00,00,00,00,c0
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT15%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT16%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT17%,1,04,00,00,00,01,00,00,00,00,00,80,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT18%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT19%,1,04,00,00,00,01,00,00,00,00,00,00,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT20%,1,0b,00,63,00,00,01,00,00,00,00,00,00
+
+; Microphone effects 
+HKR,"FX\\1",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\1",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\1",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_Association%,,%KSNODETYPE_MICROPHONE%
+HKR,"FX\\1",%CTPKEY_GUID_CRYSTALVOICENR_ENABLE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+
+; MicArray distance 
+;HKR,"FX\\1",%CTPKEY_MicArray_InterMicDistance%,1,04,00,63,00,31,08,2C,3D,31,08,2C,3D
+
+; for WIn 8.1 OS
+[SysFx0330.6.3.AddReg]
+HKR,"FX\\0",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\0",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\0",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+;HKR,"FX\\0",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_Association%,,%KSNODETYPE_SPEAKER%
+HKR,"FX\\0",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\0",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+;SBX Surround Enable
+HKR,"FX\\0",%CTPKEY_GUID_SBXSURROUND_ENABLE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+;SBX_CMSS3D_Immersion
+HKR,"FX\\0",%CTPKEY_GUID_SBXSURROUND_IMMERSION%,1,04,00,00,00,01,00,00,00,cd,cc,cc,3e
+;SBX_Crystalizer_Enable
+HKR,"FX\\0",%CTPKEY_GUID_SBXCRYSTALIZER_ENABLE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+;SBX_Crystalizer_Level
+HKR,"FX\\0",%CTPKEY_GUID_SBXCRYSTALIZER_LEVEL%,1,04,00,00,00,01,00,00,00,66,66,26,3f
+;SBX_Crystalizer_PreAttenuation
+HKR,"FX\\0",%CTPKEY_GUID_SBXCRYSTALIZER_PREATTENUATION%,1,04,00,00,00,01,00,00,00,00,00,80,3f
+;set speaker setting to headphone
+HKR,"FX\\0",%CTPKEY_GUID_SPEAKERMODE%,0x10001,0x00000002
+HKR,"FX\\0",%CTPKEY_GUID_SPEAKER_HEADPHONEOVERRIDE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+
+;Scout Mode (Speaker)
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT0%,1,0b,00,63,00,00,01,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT1%,1,0b,00,63,00,00,01,00,00,01,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT2%,1,04,00,00,00,01,00,00,00,66,66,66,3f
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT3%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT4%,1,0b,00,63,00,00,01,00,00,01,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT5%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT10%,1,04,00,00,00,01,00,00,00,00,00,00,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT11%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT12%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT13%,1,04,00,00,00,01,00,00,00,00,00,00,c0
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT14%,1,04,00,00,00,01,00,00,00,00,00,00,c0
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT15%,1,04,00,00,00,01,00,00,00,00,00,00,00
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT16%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT17%,1,04,00,00,00,01,00,00,00,00,00,80,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT18%,1,04,00,00,00,01,00,00,00,00,00,40,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT19%,1,04,00,00,00,01,00,00,00,00,00,00,40
+HKR,"FX\\0",%CTPKEY_GUID_SCOUT20%,1,0b,00,63,00,00,01,00,00,00,00,00,00
+
+; Microphone effects 
+HKR,"FX\\1",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\1",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\1",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+HKR,"FX\\1",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\1",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+;HKR,"FX\\1",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_Association%,,%KSNODETYPE_MICROPHONE%
+HKR,"FX\\1",%CTPKEY_GUID_CRYSTALVOICENR_ENABLE%,1,0b,00,00,00,01,00,00,00,01,00,00,00
+
+[SysFx1700.AddReg]
+HKR,"FX\\0",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\0",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\0",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_Association%,,%KSNODETYPE_SPEAKER%
+
+; Internal Microphone effects
+HKR,"FX\\1",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\1",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\1",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_Association%,,%KSNODETYPE_MICROPHONE_ARRAY%
+
+; Aux In
+HKR,"FX\\2",%PKEY_DisplayName%,,%MS_FX_FriendlyName%
+HKR,"FX\\2",%PKEY_SYSFX_PreMixClsid%,,%MS_FX_PREMIX_CLSID%
+HKR,"FX\\2",%PKEY_SYSFX_PostMixClsid%,,%MS_FX_POSTMIX_CLSID%
+;HKR,"FX\\2",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\2",%PKEY_SYSFX_Association%,,%KSNODETYPE_LINE_CONNECTOR%
+
+; Ext Mic
+HKR,"FX\\3",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\3",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\3",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\3",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\3",%PKEY_SYSFX_Association%,,%KSNODETYPE_MICROPHONE%
+
+; Spdif In
+HKR,"FX\\4",%PKEY_DisplayName%,,%MS_FX_FriendlyName%
+HKR,"FX\\4",%PKEY_SYSFX_PreMixClsid%,,%MS_FX_PREMIX_CLSID%
+HKR,"FX\\4",%PKEY_SYSFX_PostMixClsid%,,%MS_FX_POSTMIX_CLSID%
+;HKR,"FX\\4",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\4",%PKEY_SYSFX_Association%,,%KSNODETYPE_SPDIF_INTERFACE%
+
+; Bluetooth
+HKR,"FX\\5",%PKEY_DisplayName%,,%MS_FX_FriendlyName%
+HKR,"FX\\5",%PKEY_SYSFX_PreMixClsid%,,%MS_FX_PREMIX_CLSID%
+HKR,"FX\\5",%PKEY_SYSFX_PostMixClsid%,,%MS_FX_POSTMIX_CLSID%
+;HKR,"FX\\5",%PKEY_SYSFX_UiClsid%,,%MS_FX_UI_CLSID%
+HKR,"FX\\5",%PKEY_SYSFX_Association%,,%KSNODETYPE_DOWN_LINE_PHONE%
+
+; WUH
+HKR,"FX\\6",%PKEY_DisplayName%,,%MS_FX_FriendlyName%
+HKR,"FX\\6",%PKEY_SYSFX_PreMixClsid%,,%MS_FX_PREMIX_CLSID%
+HKR,"FX\\6",%PKEY_SYSFX_PostMixClsid%,,%MS_FX_POSTMIX_CLSID%
+;HKR,"FX\\6",PKEY_SYSFX_UiClsid%,,%MS_FX_UI_CLSID%
+HKR,"FX\\6",%PKEY_SYSFX_Association%,,%KSNODETYPE_DIGITAL_AUDIO_INTERFACE%
+
+; for WIn 8.1 OS
+[SysFx1700.6.3.AddReg]
+HKR,"FX\\0",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\0",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\0",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+;HKR,"FX\\0",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\0",%PKEY_SYSFX_Association%,,%KSNODETYPE_SPEAKER%
+HKR,"FX\\0",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\0",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+
+; Internal Microphone effects
+HKR,"FX\\1",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\1",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\1",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\1",%PKEY_SYSFX_Association%,,%KSNODETYPE_MICROPHONE_ARRAY%
+HKR,"FX\\1",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\1",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+HKR,"FX\\1",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\1",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+
+; Aux In
+HKR,"FX\\2",%PKEY_DisplayName%,,%MS_FX_FriendlyName%
+HKR,"FX\\2",%PKEY_SYSFX_PreMixClsid%,,%MS_FX_PREMIX_CLSID%
+HKR,"FX\\2",%PKEY_SYSFX_PostMixClsid%,,%MS_FX_POSTMIX_CLSID%
+;HKR,"FX\\2",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\2",%PKEY_SYSFX_Association%,,%KSNODETYPE_LINE_CONNECTOR%
+HKR,"FX\\2",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\2",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+HKR,"FX\\2",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\2",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+
+; Ext Mic
+HKR,"FX\\3",%PKEY_DisplayName%,,%SYSFX_FriendlyName%
+HKR,"FX\\3",%PKEY_SYSFX_PreMixClsid%,,%SYSFX_PREMIX_CLSID_KS%
+HKR,"FX\\3",%PKEY_SYSFX_PostMixClsid%,,%SYSFX_POSTMIX_CLSID_KS%
+;HKR,"FX\\3",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\3",%PKEY_SYSFX_Association%,,%KSNODETYPE_MICROPHONE%
+HKR,"FX\\3",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\3",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+HKR,"FX\\3",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\3",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+
+; Spdif In
+HKR,"FX\\4",%PKEY_DisplayName%,,%MS_FX_FriendlyName%
+HKR,"FX\\4",%PKEY_SYSFX_PreMixClsid%,,%MS_FX_PREMIX_CLSID%
+HKR,"FX\\4",%PKEY_SYSFX_PostMixClsid%,,%MS_FX_POSTMIX_CLSID%
+;HKR,"FX\\4",%PKEY_SYSFX_UiClsid%,,%SYSFX_UI_CLSID_KS%
+HKR,"FX\\4",%PKEY_SYSFX_Association%,,%KSNODETYPE_SPDIF_INTERFACE%
+HKR,"FX\\4",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\4",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+HKR,"FX\\4",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\4",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+
+; Bluetooth
+HKR,"FX\\5",%PKEY_DisplayName%,,%MS_FX_FriendlyName%
+HKR,"FX\\5",%PKEY_SYSFX_PreMixClsid%,,%MS_FX_PREMIX_CLSID%
+HKR,"FX\\5",%PKEY_SYSFX_PostMixClsid%,,%MS_FX_POSTMIX_CLSID%
+;HKR,"FX\\5",%PKEY_SYSFX_UiClsid%,,%MS_FX_UI_CLSID%
+HKR,"FX\\5",%PKEY_SYSFX_Association%,,%KSNODETYPE_DOWN_LINE_PHONE%
+HKR,"FX\\5",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\5",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+HKR,"FX\\5",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\5",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+
+; WUH
+HKR,"FX\\6",%PKEY_DisplayName%,,%MS_FX_FriendlyName%
+HKR,"FX\\6",%PKEY_SYSFX_PreMixClsid%,,%MS_FX_PREMIX_CLSID%
+HKR,"FX\\6",%PKEY_SYSFX_PostMixClsid%,,%MS_FX_POSTMIX_CLSID%
+;HKR,"FX\\6",PKEY_SYSFX_UiClsid%,,%MS_FX_UI_CLSID%
+HKR,"FX\\6",%PKEY_SYSFX_Association%,,%KSNODETYPE_DIGITAL_AUDIO_INTERFACE%
+HKR,"FX\\6",%PKEY_SYSFX_SFXClsid%,,%CT_SYSFX_SFX_CLSID%
+HKR,"FX\\6",%PKEY_SYSFX_MFXClsid%,,%CT_SYSFX_MFX_CLSID%
+HKR,"FX\\6",%PKEY_SFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+HKR,"FX\\6",%PKEY_MFX_ProcessingModes_Supported_For_Streaming%,0x00010000,%AUDIO_SIGNALPROCESSINGMODE_DEFAULT%
+
+[SysFx.DelReg]
+HKR,"FX\\0",%PKEY_DisplayName%
+HKR,"FX\\0",%PKEY_SYSFX_PreMixClsid%
+HKR,"FX\\0",%PKEY_SYSFX_PostMixClsid%
+HKR,"FX\\0",%PKEY_SYSFX_UiClsid%
+HKR,"FX\\0",%PKEY_SYSFX_Association%
+
+HKR,"FX\\1",%PKEY_DisplayName%
+HKR,"FX\\1",%PKEY_SYSFX_PreMixClsid%
+HKR,"FX\\1",%PKEY_SYSFX_PostMixClsid%
+HKR,"FX\\1",%PKEY_SYSFX_UiClsid%
+HKR,"FX\\1",%PKEY_SYSFX_Association%
+
+HKR,"FX\\2",%PKEY_DisplayName%
+HKR,"FX\\2",%PKEY_SYSFX_PreMixClsid%
+HKR,"FX\\2",%PKEY_SYSFX_PostMixClsid%
+HKR,"FX\\2",%PKEY_SYSFX_UiClsid%
+HKR,"FX\\2",%PKEY_SYSFX_Association%
+
+HKR,"FX\\3",%PKEY_DisplayName%
+HKR,"FX\\3",%PKEY_SYSFX_PreMixClsid%
+HKR,"FX\\3",%PKEY_SYSFX_PostMixClsid%
+HKR,"FX\\3",%PKEY_SYSFX_UiClsid%
+HKR,"FX\\3",%PKEY_SYSFX_Association%
+
+HKR,"FX\\4",%PKEY_DisplayName%
+HKR,"FX\\4",%PKEY_SYSFX_PreMixClsid%
+HKR,"FX\\4",%PKEY_SYSFX_PostMixClsid%
+HKR,"FX\\4",%PKEY_SYSFX_UiClsid%
+HKR,"FX\\4",%PKEY_SYSFX_Association%
+
+HKR,"FX\\5",%PKEY_DisplayName%
+HKR,"FX\\5",%PKEY_SYSFX_PreMixClsid%
+HKR,"FX\\5",%PKEY_SYSFX_PostMixClsid%
+HKR,"FX\\5",%PKEY_SYSFX_UiClsid%
+HKR,"FX\\5",%PKEY_SYSFX_Association%
+
+HKR,"FX\\6",%PKEY_DisplayName%
+HKR,"FX\\6",%PKEY_SYSFX_PreMixClsid%
+HKR,"FX\\6",%PKEY_SYSFX_PostMixClsid%
+HKR,"FX\\6",%PKEY_SYSFX_UiClsid%
+HKR,"FX\\6",%PKEY_SYSFX_Association%
+
+HKR,"FX\\7",%PKEY_DisplayName%
+HKR,"FX\\7",%PKEY_SYSFX_PreMixClsid%
+HKR,"FX\\7",%PKEY_SYSFX_PostMixClsid%
+HKR,"FX\\7",%PKEY_SYSFX_UiClsid%
+HKR,"FX\\7",%PKEY_SYSFX_Association%
+
+;; SB1580 specific Endpoint AddReg*****************************************************************************
+[SB1580.SysEP.AddReg]
+HKR,"EP\\0",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_SPEAKER%
+HKR,"EP\\0",%PKEY_AudioEngine_OEMFormat%,1,41,00,7C,74,28,00,00,00,FE,FF,06,00,80,BB,00,00,00,CA,08,00,0C,00,10,00,16,00,10,00,3F,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\0",%PKEY_AudioEngine_OEMFormat_FLOAT%,1,41,00,7C,74,28,00,00,00,FE,FF,06,00,80,BB,00,00,00,94,11,00,18,00,20,00,16,00,20,00,3F,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\0",%PKEY_EFFECTNODEINFO_RENDER%,,%EFFECTNODEINFO_RENDER_KS%
+HKR,"EP\\0",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1580.ini
+HKR,"EP\\0",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1580.ini
+HKR,"EP\\0",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1580.ini
+HKR,"EP\\0",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000101
+HKR,"EP\\0",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+HKR,"EP\\0",%CTPKEY_SOUNDCORECTL_CLSID%,,%KSMALCCTL%
+
+HKR,"EP\\1",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_SPDIF_INTERFACE%
+HKR,"EP\\1",%PKEY_AudioEngine_OEMFormat%,1, 41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,EE,02,00,04,00,10,00,16,00,10,00,03,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\1",%PKEY_AudioEngine_OEMFormat_FLOAT%,1, 41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,DC,05,00,08,00,20,00,16,00,20,00,03,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\1",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1580.ini
+HKR,"EP\\1",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1580.ini
+HKR,"EP\\1",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1580.ini
+HKR,"EP\\1",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000101
+HKR,"EP\\1",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+;HKR,"EP\\1",%PKEY_ChainerLFX_Overwrite%,,%KS_CHAN_PREMIX_CLSID%
+;HKR,"EP\\1",%PKEY_ChainerGFX_Overwrite%,,%KS_CHAN_POSTMIX_CLSID%
+;HKR,"EP\\1",%PKEY_EncoderLFX_Overwrite%,,%KSMLFX_CLSID%
+;HKR,"EP\\1",%PKEY_EncoderGFX_Overwrite%,,%KSDGFX_CLSID%
+
+HKR,"EP\\2",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_PROCESSING_MICROPHONE_ARRAY%
+HKR,"EP\\2",%PKEY_AudioEngine_OEMFormat%,1, 41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,EE,02,00,04,00,10,00,16,00,10,00,03,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\2",%PKEY_AudioEngine_OEMFormat_FLOAT%,1, 41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,DC,05,00,08,00,20,00,16,00,20,00,03,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\2",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1580.ini
+HKR,"EP\\2",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1580.ini
+HKR,"EP\\2",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1580.ini
+HKR,"EP\\2",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000201
+HKR,"EP\\2",%CTPKEY_SOUNDCORECTL_CLSID%,,%KSMALCCTL%
+HKR,"EP\\2",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+HKR,"EP\\2",%PKEY_EFFECTNODEINFO_CAPTURE%,,%EFFECTNODEINFO_RENDER_KS%
+
+HKR,"EP\\3",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_LINE_CONNECTOR%
+HKR,"EP\\3",%PKEY_AudioEngine_OEMFormat%,1, 41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,EE,02,00,04,00,10,00,16,00,10,00,03,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\3",%PKEY_AudioEngine_OEMFormat_FLOAT%,1, 41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,DC,05,00,08,00,20,00,16,00,20,00,03,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\3",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1580.ini
+HKR,"EP\\3",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1580.ini
+HKR,"EP\\3",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1580.ini
+HKR,"EP\\3",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000201
+HKR,"EP\\3",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+
+HKR,"EP\\4",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_DIGITAL_AUDIO_INTERFACE%
+HKR,"EP\\4",%PKEY_AudioEngine_OEMFormat%,1, 41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,EE,02,00,04,00,10,00,16,00,10,00,03,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\4",%PKEY_AudioEngine_OEMFormat_FLOAT%,1, 41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,DC,05,00,08,00,20,00,16,00,20,00,03,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\4",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1580.ini
+HKR,"EP\\4",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1580.ini
+HKR,"EP\\4",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000201
+HKR,"EP\\4",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+
+HKR,"EP\\5",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_MICROPHONE_ARRAY%
+HKR,"EP\\5",%PKEY_AudioEngine_OEMFormat%,1, 41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,EE,02,00,04,00,10,00,16,00,10,00,03,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\5",%PKEY_AudioEngine_OEMFormat_FLOAT%,1, 41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,DC,05,00,08,00,20,00,16,00,20,00,03,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\5",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1580.ini
+HKR,"EP\\5",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1580.ini
+HKR,"EP\\5",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1580.ini
+HKR,"EP\\5",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000201
+HKR,"EP\\5",%CTPKEY_SOUNDCORECTL_CLSID%,,%KSMALCCTL%
+HKR,"EP\\5",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+HKR,"EP\\5",%PKEY_EFFECTNODEINFO_CAPTURE%,,%EFFECTNODEINFO_RENDER_KS%
+
+;; SB1590 specific Endpoint AddReg*****************************************************************************
+[SB1590.SysEP.AddReg]
+HKR,"EP\\0",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_SPEAKER%
+HKR,"EP\\0",%PKEY_AudioEngine_OEMFormat%,1,41,00,95,72,01,00,00,00,fe,ff,08,00,80,bb,00,00,00,70,17,00,20,00,20,00,16,00,20,00,3f,06,00,00,03,00,00,00,00,00,10,00,80,00,00,aa,00,38,9b,71
+HKR,"EP\\0",%PKEY_AudioEngine_OEMFormat_FLOAT%,1,41,00,95,72,01,00,00,00,fe,ff,08,00,80,bb,00,00,00,70,17,00,20,00,20,00,16,00,20,00,3f,06,00,00,03,00,00,00,00,00,10,00,80,00,00,aa,00,38,9b,71
+HKR,"EP\\0",%PKEY_AudioEngine_DeviceFormat%,1,41,00,95,72,01,00,00,00,fe,ff,08,00,80,bb,00,00,00,94,11,00,18,00,18,00,16,00,18,00,3f,06,00,00,01,00,00,00,00,00,10,00,80,00,00,aa,00,38,9b,71
+HKR,"EP\\0",%PKEY_EFFECTNODEINFO_RENDER%,,%EFFECTNODEINFO_RENDER_KS%
+HKR,"EP\\0",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1590.ini
+HKR,"EP\\0",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1590.ini
+HKR,"EP\\0",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1590.ini
+HKR,"EP\\0",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000101
+HKR,"EP\\0",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+HKR,"EP\\0",%CTPKEY_SOUNDCORECTL_CLSID%,,%KSMALCCTL%
+
+HKR,"EP\\1",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_MICROPHONE_ARRAY%
+HKR,"EP\\1",%PKEY_AudioEngine_OEMFormat%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,65,04,00,06,00,18,00,16,00,18,00,03,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\1",%PKEY_AudioEngine_OEMFormat_FLOAT%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,DC,05,00,08,00,20,00,16,00,20,00,03,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\1",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1590.ini
+HKR,"EP\\1",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1590.ini
+HKR,"EP\\1",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1590.ini
+HKR,"EP\\1",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000201
+HKR,"EP\\1",%CTPKEY_SOUNDCORECTL_CLSID%,,%KSMALCCTL%
+HKR,"EP\\1",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+HKR,"EP\\1",%PKEY_EFFECTNODEINFO_CAPTURE%,,%EFFECTNODEINFO_RENDER_KS%
+
+HKR,"EP\\2",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_LINE_CONNECTOR%
+HKR,"EP\\2",%PKEY_AudioEngine_OEMFormat%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,65,04,00,06,00,18,00,16,00,18,00,03,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\2",%PKEY_AudioEngine_OEMFormat_FLOAT%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,DC,05,00,08,00,20,00,16,00,20,00,03,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\2",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1590.ini
+HKR,"EP\\2",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1590.ini
+HKR,"EP\\2",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1590.ini
+HKR,"EP\\2",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000201
+HKR,"EP\\2",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+
+HKR,"EP\\3",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_MICROPHONE%
+HKR,"EP\\3",%PKEY_AudioEngine_OEMFormat%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,65,04,00,06,00,18,00,16,00,18,00,03,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\3",%PKEY_AudioEngine_OEMFormat_FLOAT%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,DC,05,00,08,00,20,00,16,00,20,00,03,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\3",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1590.ini
+HKR,"EP\\3",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1590.ini
+HKR,"EP\\3",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1590.ini
+HKR,"EP\\3",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000201
+HKR,"EP\\3",%CTPKEY_SOUNDCORECTL_CLSID%,,%KSMALCCTL%
+HKR,"EP\\3",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+HKR,"EP\\3",%PKEY_EFFECTNODEINFO_CAPTURE%,,%EFFECTNODEINFO_RENDER_KS%
+
+HKR,"EP\\4",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_SPDIF_INTERFACE%
+HKR,"EP\\4",%PKEY_AudioEngine_OEMFormat%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,65,04,00,06,00,18,00,16,00,18,00,03,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\4",%PKEY_AudioEngine_OEMFormat_FLOAT%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,DC,05,00,08,00,20,00,16,00,20,00,03,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\4",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1590.ini
+HKR,"EP\\4",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1590.ini
+HKR,"EP\\4",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1590.ini
+HKR,"EP\\4",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000201
+HKR,"EP\\4",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+
+HKR,"EP\\5",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_DOWN_LINE_PHONE%
+HKR,"EP\\5",%PKEY_AudioEngine_OEMFormat%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,65,04,00,06,00,18,00,16,00,18,00,03,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\5",%PKEY_AudioEngine_OEMFormat_FLOAT%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,DC,05,00,08,00,20,00,16,00,20,00,03,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\5",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1590.ini
+HKR,"EP\\5",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1590.ini
+HKR,"EP\\5",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1590.ini
+HKR,"EP\\5",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000201
+HKR,"EP\\5",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+
+HKR,"EP\\6",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_DIGITAL_AUDIO_INTERFACE%
+HKR,"EP\\6",%PKEY_AudioEngine_OEMFormat%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,65,04,00,06,00,18,00,16,00,18,00,03,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\6",%PKEY_AudioEngine_OEMFormat_FLOAT%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,DC,05,00,08,00,20,00,16,00,20,00,03,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\6",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1590.ini
+HKR,"EP\\6",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1590.ini
+HKR,"EP\\6",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1590.ini
+HKR,"EP\\6",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000201
+HKR,"EP\\6",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+
+;; SB1600 specific Endpoint AddReg*****************************************************************************
+;; Default is 44.1k/24bit/2ch
+[SB1600.SysEP.AddReg]
+HKR,"EP\\0",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_SPEAKER%
+HKR,"EP\\0",%PKEY_AudioEngine_OEMFormat%,1,41,00,00,00,28,00,00,00,FE,FF,02,00,44,AC,00,00,98,09,04,00,06,00,18,00,16,00,18,00,03,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\0",%PKEY_AudioEngine_OEMFormat_FLOAT%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,44,AC,00,00,20,62,05,00,08,00,20,00,16,00,20,00,03,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\0",%PKEY_EFFECTNODEINFO_RENDER%,,%EFFECTNODEINFO_RENDER_KS%
+HKR,"EP\\0",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1600.ini
+HKR,"EP\\0",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1600.ini
+HKR,"EP\\0",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1600.ini
+HKR,"EP\\0",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000101
+HKR,"EP\\0",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+HKR,"EP\\0",%CTPKEY_SOUNDCORECTL_CLSID%,,%KSMALCCTL%
+
+;; Default is 44.1k/16bit/1ch
+HKR,"EP\\1",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_MICROPHONE%
+HKR,"EP\\1",%PKEY_AudioEngine_OEMFormat%,1,41,00,7C,74,28,00,00,00,FE,FF,01,00,44,AC,00,00,88,58,01,00,02,00,10,00,16,00,10,00,04,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\1",%PKEY_AudioEngine_OEMFormat_FLOAT%,1,41,00,7C,74,28,00,00,00,FE,FF,01,00,44,AC,00,00,10,B1,02,00,04,00,20,00,16,00,20,00,04,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\1",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1600.ini
+HKR,"EP\\1",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1600.ini
+HKR,"EP\\1",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1600.ini
+HKR,"EP\\1",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000201
+HKR,"EP\\1",%CTPKEY_SOUNDCORECTL_CLSID%,,%KSMALCCTL%
+HKR,"EP\\1",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+HKR,"EP\\1",%PKEY_EFFECTNODEINFO_CAPTURE%,,%EFFECTNODEINFO_RENDER_KS%
+
+;; SB1610 specific Endpoint AddReg*****************************************************************************
+;; 48k/24b/2ch
+[SB1610.SysEP.AddReg]
+HKR,"EP\\0",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_SPEAKER%
+HKR,"EP\\0",%PKEY_AudioEngine_OEMFormat%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,65,04,00,06,00,18,00,16,00,18,00,03,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\0",%PKEY_AudioEngine_OEMFormat_FLOAT%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,DC,05,00,08,00,20,00,16,00,20,00,03,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\0",%PKEY_EFFECTNODEINFO_RENDER%,,%EFFECTNODEINFO_RENDER_KS%
+HKR,"EP\\0",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1610.ini
+HKR,"EP\\0",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1610.ini
+HKR,"EP\\0",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1610.ini
+HKR,"EP\\0",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000101
+HKR,"EP\\0",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+HKR,"EP\\0",%CTPKEY_SOUNDCORECTL_CLSID%,,%KSMALCCTL%
+
+HKR,"EP\\1",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_MICROPHONE%
+HKR,"EP\\1",%PKEY_AudioEngine_OEMFormat%,1, 41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,65,04,00,06,00,18,00,16,00,18,00,03,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\1",%PKEY_AudioEngine_OEMFormat_FLOAT%,1, 41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,DC,05,00,08,00,20,00,16,00,20,00,03,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\1",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1610.ini
+HKR,"EP\\1",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1610.ini
+HKR,"EP\\1",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1610.ini
+HKR,"EP\\1",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000201
+HKR,"EP\\1",%CTPKEY_SOUNDCORECTL_CLSID%,,%KSMALCCTL%
+HKR,"EP\\1",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+HKR,"EP\\1",%PKEY_EFFECTNODEINFO_CAPTURE%,,%EFFECTNODEINFO_RENDER_KS%
+
+
+;; SB1700 specific Endpoint AddReg*****************************************************************************
+[SB1700.SysEP.AddReg]
+HKR,"EP\\0",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_SPEAKER%
+HKR,"EP\\0",%PKEY_AudioEngine_OEMFormat%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,65,04,00,06,00,18,00,16,00,18,00,03,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\0",%PKEY_AudioEngine_OEMFormat_FLOAT%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,DC,05,00,08,00,20,00,16,00,20,00,03,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\0",%PKEY_EFFECTNODEINFO_RENDER%,,%EFFECTNODEINFO_RENDER_KS%
+HKR,"EP\\0",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1700.ini
+HKR,"EP\\0",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1700.ini
+HKR,"EP\\0",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1700.ini
+HKR,"EP\\0",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000101
+HKR,"EP\\0",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+HKR,"EP\\0",%CTPKEY_SOUNDCORECTL_CLSID%,,%KSMALCCTL%
+
+HKR,"EP\\1",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_MICROPHONE_ARRAY%
+HKR,"EP\\1",%PKEY_AudioEngine_OEMFormat%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,65,04,00,06,00,18,00,16,00,18,00,03,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\1",%PKEY_AudioEngine_OEMFormat_FLOAT%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,DC,05,00,08,00,20,00,16,00,20,00,03,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\1",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1700.ini
+HKR,"EP\\1",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1700.ini
+HKR,"EP\\1",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1700.ini
+HKR,"EP\\1",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000201
+HKR,"EP\\1",%CTPKEY_SOUNDCORECTL_CLSID%,,%KSMALCCTL%
+HKR,"EP\\1",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+HKR,"EP\\1",%PKEY_EFFECTNODEINFO_CAPTURE%,,%EFFECTNODEINFO_RENDER_KS%
+
+HKR,"EP\\2",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_LINE_CONNECTOR%
+HKR,"EP\\2",%PKEY_AudioEngine_OEMFormat%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,65,04,00,06,00,18,00,16,00,18,00,03,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\2",%PKEY_AudioEngine_OEMFormat_FLOAT%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,DC,05,00,08,00,20,00,16,00,20,00,03,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\2",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1700.ini
+HKR,"EP\\2",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1700.ini
+HKR,"EP\\2",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1700.ini
+HKR,"EP\\2",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000201
+HKR,"EP\\2",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+
+HKR,"EP\\3",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_MICROPHONE%
+HKR,"EP\\3",%PKEY_AudioEngine_OEMFormat%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,65,04,00,06,00,18,00,16,00,18,00,03,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\3",%PKEY_AudioEngine_OEMFormat_FLOAT%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,DC,05,00,08,00,20,00,16,00,20,00,03,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\3",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1700.ini
+HKR,"EP\\3",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1700.ini
+HKR,"EP\\3",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1700.ini
+HKR,"EP\\3",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000201
+HKR,"EP\\3",%CTPKEY_SOUNDCORECTL_CLSID%,,%KSMALCCTL%
+HKR,"EP\\3",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+HKR,"EP\\3",%PKEY_EFFECTNODEINFO_CAPTURE%,,%EFFECTNODEINFO_RENDER_KS%
+
+HKR,"EP\\4",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_SPDIF_INTERFACE%
+HKR,"EP\\4",%PKEY_AudioEngine_OEMFormat%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,65,04,00,06,00,18,00,16,00,18,00,03,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\4",%PKEY_AudioEngine_OEMFormat_FLOAT%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,DC,05,00,08,00,20,00,16,00,20,00,03,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\4",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1700.ini
+HKR,"EP\\4",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1700.ini
+HKR,"EP\\4",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1700.ini
+HKR,"EP\\4",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000201
+HKR,"EP\\4",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+
+HKR,"EP\\5",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_DOWN_LINE_PHONE%
+HKR,"EP\\5",%PKEY_AudioEngine_OEMFormat%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,65,04,00,06,00,18,00,16,00,18,00,03,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\5",%PKEY_AudioEngine_OEMFormat_FLOAT%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,DC,05,00,08,00,20,00,16,00,20,00,03,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\5",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1700.ini
+HKR,"EP\\5",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1700.ini
+HKR,"EP\\5",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1700.ini
+HKR,"EP\\5",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000201
+HKR,"EP\\5",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+
+HKR,"EP\\6",%PKEY_AudioEndpoint_Association%,,%KSNODETYPE_DIGITAL_AUDIO_INTERFACE%
+HKR,"EP\\6",%PKEY_AudioEngine_OEMFormat%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,65,04,00,06,00,18,00,16,00,18,00,03,00,00,00,01,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\6",%PKEY_AudioEngine_OEMFormat_FLOAT%,1,41,00,7C,74,28,00,00,00,FE,FF,02,00,80,BB,00,00,00,DC,05,00,08,00,20,00,16,00,20,00,03,00,00,00,03,00,00,00,00,00,10,00,80,00,00,AA,00,38,9B,71
+HKR,"EP\\6",%CTPKEY_CommandRouter_SettingsOverride%,,%16419%\cfSB1700.ini
+HKR,"EP\\6",%CTPKEY_Endpoint_SettingsOverride%,,%16419%\cfSB1700.ini
+HKR,"EP\\6",%CTPKEY_Endpoint_THXSettingsOverride%,,%16419%\cfSB1700.ini
+HKR,"EP\\6",%PKEY_AudioDevice_EnableEndpointByDefault%,0x00010001,0x00000201
+HKR,"EP\\6",%CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT%,,%SC_CREATIVE%
+
+[SBAVMon.AddReg]
+;HKLM,Software\Microsoft\Windows\CurrentVersion\Run,"Creative SB USB Monitoring Utility Launcher",,"RunDll32 SBUSBMonL.dll,SBAVMonitorLauncher"
+
+
+[COINST.AddReg]
+HKR,,CoInstallers32,0x00010000,"KsUSBDvInst.dll,CtDevCoInstProc"
+;HKLM,System\CurrentControlSet\Control\CoDeviceInstallers,{4d36e96c-e325-11ce-bfc1-08002be10318},0x00010008,"KsCoInst.dll,CtCoInstProc"
+HKR,,OriginalSourcePath,,%01%
+HKLM,%CoInstallerInfo%,%DvInstallerName%,,%DvININame%
+
+[AudioBrand.SBX.AddReg]
+HKR,Branding,icon,,"SB.ico"
+HKR,Branding,bitmap,,"SB.bmp"
+HKR,Branding,url,,"http://www.soundblaster.com"
+
+;; KSAUD generic NT install*****************************************************************************
+
+[KSAUD_Service_Inst]
+DisplayName    = %KSAUD.SvcDesc%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 3                  ; SERVICE_DEMAND_START
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %10%\system32\drivers\ksUSBaud.sys
+
+;; Generic Strings *****************************************************************************
+[Strings]
+InfFileName             ="ksUSBaud.inf"
+MfgName                 ="Creative Technology Ltd."
+
+
+;; Dynamic loaded Kernal Module Keys
+StrCTKey                ="SYSTEM\CurrentControlSet\Control\Creative Tech"
+
+DriverDisk1             ="Creative USB Audio Installation CD"
+
+Proxy.CLSID             ="{17CCA71B-ECD7-11D0-B908-00A0C9223196}"
+KSCATEGORY_AUDIO        ="{6994AD04-93EF-11D0-A3CC-00A0C9223196}"
+KSCATEGORY_RENDER       ="{65E8773E-8F56-11D0-A3B9-00A0C9223196}"
+KSCATEGORY_CAPTURE      ="{65E8773D-8F56-11D0-A3B9-00A0C9223196}"
+KSCATEGORY_TOPOLOGY     ="{DDA54A40-1E4C-11D1-A050-405705C10000}"
+
+KSAUD.SvcDesc           ="Creative USB Kernel Audio Driver"
+
+WaveOutDevName          ="WaveOutName"
+WaveInDevName           ="WaveInName"
+MixerDevName            ="MixerName"
+
+;; Filter Names
+KSNAME_WAVE 	     = "KSAUDWave"
+KSNAME_TOPO 	     = "KSAUDTopo"
+KSNAME_CAPTURE 	     = "KSAUDCapture"
+KSNAME_AC3 	     = "KSAUDAC3"
+KSNAME_GLOBAL_SINGLE = "Wave"
+KSNAME_GLOBAL        = "{101DE7F6-62E6-4f36-BCCD-5A6F71AD5FC4}"
+
+;; SB1580 Specific Strings *****************************************************************************
+
+SB1580.DeviceDesc        ="Sound Blaster X7"
+SB1580.Product           ="Sound Blaster X7"
+SB1580.Wave.szPname      ="Sound Blaster X7"
+SB1580.Topology.szPname  ="Sound Blaster X7"
+
+;; Name for audio, midi etc, must be 31 characters or less.
+
+USB\VID_041E&PID_323A&MI_00.DeviceDesc = "Sound Blaster X7"
+
+;; Device Names (non-localizable)
+DevInfoSB1580        ="SOFTWARE\Creative Tech\KSAud\VID_041E&PID_323A"
+
+;; SB1590 Specific Strings *****************************************************************************
+
+SB1590.DeviceDesc        ="Sound Blaster E5"
+SB1590.Product           ="Sound Blaster E5"
+SB1590.Wave.szPname      ="Sound Blaster E5"
+SB1590.Topology.szPname  ="Sound Blaster E5"
+
+;; Name for audio, midi etc, must be 31 characters or less.
+
+USB\VID_041E&PID_323C&MI_00.DeviceDesc = "Sound Blaster E5"
+
+;; Device Names (non-localizable)
+DevInfoSB1590        ="SOFTWARE\Creative Tech\KSAud\VID_041E&PID_323C"
+
+;; SB1600 Specific Strings *****************************************************************************
+
+SB1600.DeviceDesc        ="Sound Blaster E1"
+SB1600.Product           ="Sound Blaster E1"
+SB1600.Wave.szPname      ="Sound Blaster E1"
+SB1600.Topology.szPname  ="Sound Blaster E1"
+
+;; Name for audio, midi etc, must be 31 characters or less.
+
+USB\VID_041E&PID_323B&MI_00.DeviceDesc = "Sound Blaster E1"
+
+;; Device Names (non-localizable)
+DevInfoSB1600        ="SOFTWARE\Creative Tech\KSAud\VID_041E&PID_323B"
+
+;; SB1610 Specific Strings *****************************************************************************
+
+SB1610.DeviceDesc        ="Sound Blaster E3"
+SB1610.Product           ="Sound Blaster E3"
+SB1610.Wave.szPname      ="Sound Blaster E3"
+SB1610.Topology.szPname  ="Sound Blaster E3"
+
+;; Name for audio, midi etc, must be 31 characters or less.
+
+USB\VID_041E&PID_323E&MI_00.DeviceDesc = "Sound Blaster E3"
+
+;; Device Names (non-localizable)
+DevInfoSB1610        ="SOFTWARE\Creative Tech\KSAud\VID_041E&PID_323E"
+
+
+;; SB1700 Specific Strings *****************************************************************************
+
+SB1700.DeviceDesc        ="Sound BlasterX G5"
+SB1700.Product           ="Sound BlasterX G5"
+SB1700.Wave.szPname      ="Sound BlasterX G5"
+SB1700.Topology.szPname  ="Sound BlasterX G5"
+
+;; Name for audio, midi etc, must be 31 characters or less.
+
+USB\VID_041E&PID_3243&MI_00.DeviceDesc = "Sound BlasterX G5"
+
+;; Device Names (non-localizable)
+DevInfoSB1700        ="SOFTWARE\Creative Tech\KSAud\VID_041E&PID_3243"
+
+
+;; APO specific strings ********************************************************************************
+;;
+;; PropertyKey GUIDS
+;;
+PKEY_SYSFX_Association          = "{D04E05A6-594B-4FB6-A80D-01AF5EED7D1D},0"
+PKEY_SYSFX_PreMixClsid          = "{D04E05A6-594B-4FB6-A80D-01AF5EED7D1D},1"
+PKEY_SYSFX_PostMixClsid         = "{D04E05A6-594B-4FB6-A80D-01AF5EED7D1D},2"
+PKEY_SYSFX_UiClsid              = "{D04E05A6-594B-4FB6-A80D-01AF5EED7D1D},3"
+PKEY_SYSFX_SFXClsid             = "{D04E05A6-594B-4FB6-A80D-01AF5EED7D1D},5"
+PKEY_SYSFX_MFXClsid             = "{D04E05A6-594B-4FB6-A80D-01AF5EED7D1D},6"
+PKEY_DisplayName                = "{B725F130-47EF-101A-A5F1-02608C9EEBAC},10"
+PKEY_AudioEndpoint_Association  = "{1DA5D803-D492-4EDD-8C23-E0C0FFEE7F0E},2"
+CTPKEY_CommandRouter_SettingsOverride   = "{BB282A80-2A05-4c17-AA45-9910F8F7D30D},0"
+CTPKEY_Endpoint_SettingsOverride        = "{872572B3-2F9B-4fd1-83C7-4E3039AEFBF1},0"
+PKEY_CRYSTAL_CAP   		= "{7C060DBC-BE6F-45a5-86B5-109F4400634C},2"
+PKEY_EFFECTNODEINFO_RENDER	= "{F1056047-B091-4d85-A5C0-B13D4D8BAC57},0"
+PKEY_EFFECTNODEINFO_CAPTURE     = "{F1056047-B091-4D85-A5C0-B13D4D8BAC57},1"
+CTPKEY_APR_Support = "{BA7E8241-0A45-4bd5-8003-48689B8E6061},0"
+CTPKEY_Endpoint_THXSettingsOverride		= "{872572B4-2F9B-4fd1-83C7-4E3039AEFBF1},0"
+PKEY_AudioDevice_EnableEndpointByDefault = "{F3E80BEF-1723-4FF2-BCC4-7F83DC5E46D4},4"
+CTPKEY_SOUNDCORECTL_CLSID                = "{C949C6AA-132B-4511-BB1B-35261A2A6333},0"
+CTPKEY_CREATIVE_SUPPORTED_SC_ENDPT       = "{F5376650-918F-4CF4-91FB-D123CF4E1350},1"
+CTPKEY_Hide_Default_Page		 = "{D2D645CB-856B-44A8-8CBB-6AE7C8E5BD57},0"
+CTPKEY_Virtual_Speaker_Config            = "{1B8726F2-1FEB-42af-8641-3D1C904696E2},0"
+CTPKEY_Jack_Retask_Page                  = "{6A85B39D-CB5B-45d1-A2F6-D425F764605F},0"
+CTPKEY_MicArray_InterMicDistance	 = "{40D0D021-20BD-4D15-A93C-1DBE8922C642},11"
+
+PKEY_AudioEndpoint_ControlPanelPageProvider = "{1DA5D803-D492-4EDD-8C23-E0C0FFEE7F0E},1"
+;;
+;; PKEY_AudioEngine_OEMFormat:  Specifies the default format that is used for rendering/capturing.
+;; vartype = VT_BLOB
+;;
+PKEY_AudioEngine_OEMFormat = "{E4870E26-3CC5-4CD2-BA46-CA0A9A70ED04},3"
+PKEY_AudioEngine_OEMFormat_FLOAT = "{E4870E26-3CC5-4CD2-BA46-CA0A9A70ED04},0"
+PKEY_AudioEngine_DeviceFormat = "{f19f064d-082c-4e27-bc73-6882a1bb8e4c},0"
+
+PKEY_SFX_ProcessingModes_Supported_For_Streaming = "{D3993A3F-99C2-4402-B5EC-A92A0367664B},5"
+PKEY_MFX_ProcessingModes_Supported_For_Streaming = "{D3993A3F-99C2-4402-B5EC-A92A0367664B},6"
+AUDIO_SIGNALPROCESSINGMODE_DEFAULT = "{C18E2F7E-933D-4965-B7D1-1EEF228D2AF3}"
+
+KSMLFX_CLSID = "{D0C20A43-041B-4705-9193-2FD64F0B168A}"
+CTMLFX_CLSID = "{F12078D8-CA28-4cb8-9198-908C56B23E74}"
+KSDGFX_CLSID = "{242249CC-E3C8-4571-9A0B-ED0906B7F994}"
+CTDGFX_CLSID = "{FC9479E3-F89E-47d8-A5AA-AB59575C9EA1}"
+
+CTPKEY_GUID_SBXSURROUND_ENABLE 		  = "{5b4777a4-8ad4-4d34-893a-df34da0e56ca},0"
+CTPKEY_GUID_SBXSURROUND_IMMERSION	  = "{A5A78EA4-C156-4db7-85AA-81CFF1C3F192},0"
+CTPKEY_GUID_SBXCRYSTALIZER_ENABLE	  = "{3CD83C04-868F-4f08-8D75-B4625FFE3B31},0"
+CTPKEY_GUID_SBXCRYSTALIZER_LEVEL	  = "{0F03F0BB-72C7-4ec1-8422-7B8D7410694A},0"
+CTPKEY_GUID_SBXCRYSTALIZER_PREATTENUATION = "{3C663165-48FC-41d8-8120-81CB0B12B230},0"
+CTPKEY_GUID_CRYSTALVOICENR_ENABLE         = "{40D0D021-20BD-4d15-A93C-1DBE8922C642},1"
+CTPKEY_GUID_SPEAKERMODE		     	  = "{59FBB5C6-4C98-4741-ADC0-40ABB474A963},0"
+CTPKEY_GUID_SPEAKER_HEADPHONEOVERRIDE 	  = "{e8d2d16c-a666-44a0-bb77-3051f7384d22},0"
+
+; Scout Mode GUIDS
+CTPKEY_GUID_SCOUT0   = "{156AC5B7-384A-4b15-A3A4-79350563FC88},0"
+CTPKEY_GUID_SCOUT1   = "{156AC5B7-384A-4b15-A3A4-79350563FC88},1"
+CTPKEY_GUID_SCOUT2   = "{156AC5B7-384A-4b15-A3A4-79350563FC88},2"
+CTPKEY_GUID_SCOUT3   = "{156AC5B7-384A-4b15-A3A4-79350563FC88},3"
+CTPKEY_GUID_SCOUT4   = "{156AC5B7-384A-4b15-A3A4-79350563FC88},4"
+CTPKEY_GUID_SCOUT5   = "{156AC5B7-384A-4b15-A3A4-79350563FC88},5"
+CTPKEY_GUID_SCOUT10   = "{156AC5B7-384A-4b15-A3A4-79350563FC88},10"
+CTPKEY_GUID_SCOUT11   = "{156AC5B7-384A-4b15-A3A4-79350563FC88},11"
+CTPKEY_GUID_SCOUT12   = "{156AC5B7-384A-4b15-A3A4-79350563FC88},12"
+CTPKEY_GUID_SCOUT13   = "{156AC5B7-384A-4b15-A3A4-79350563FC88},13"
+CTPKEY_GUID_SCOUT14   = "{156AC5B7-384A-4b15-A3A4-79350563FC88},14"
+CTPKEY_GUID_SCOUT15   = "{156AC5B7-384A-4b15-A3A4-79350563FC88},15"
+CTPKEY_GUID_SCOUT16   = "{156AC5B7-384A-4b15-A3A4-79350563FC88},16"
+CTPKEY_GUID_SCOUT17   = "{156AC5B7-384A-4b15-A3A4-79350563FC88},17"
+CTPKEY_GUID_SCOUT18   = "{156AC5B7-384A-4b15-A3A4-79350563FC88},18"
+CTPKEY_GUID_SCOUT19   = "{156AC5B7-384A-4b15-A3A4-79350563FC88},19"
+CTPKEY_GUID_SCOUT20   = "{156AC5B7-384A-4b15-A3A4-79350563FC88},20"
+
+; Creative Chaining Property Keys
+PKEY_APO_NUM           = "{d46c4dfd-28b8-4ab8-a45d-70399958ef26},0"
+PKEY_GFX_APO1          = "{e1032fc5-ddab-4c4b-9940-8a6be78a4db6},0"
+PKEY_GFX_APO2          = "{e1032fc5-ddab-4c4b-9940-8a6be78a4db6},1"
+PKEY_Chain_Encoder	   = "{03C89A4E-CCF3-4f3e-98E1-22CB05513326},0"
+NUM_APO_SET       	   = 0x2
+
+; KS APO Chainer GUIDs
+KS_CHAN_UI_CLSID      = "{AF93BD93-CB7B-4ad0-9164-6BC1523FE638}"
+KS_CHAN_PREMIX_CLSID  = "{254E8DEF-A6D4-4e41-8114-E284F877E703}"
+KS_CHAN_POSTMIX_CLSID = "{E7C0C8E7-65A8-492d-9DD1-97BF2022DAE1}"
+
+;;This key is need for APOIM determine the GUID to check against
+PKEY_EncoderLFX_Overwrite       = "{C8A55F5E-7335-4a46-9C1A-E2779B36DEE0},0"
+PKEY_EncoderGFX_Overwrite       = "{C8A55F5E-7335-4a46-9C1A-E2779B36DEE0},1"
+
+PKEY_ChainerLFX_Overwrite       = "{5AD3317E-0E97-4ec4-80C1-17245B3E620B},0"
+PKEY_ChainerGFX_Overwrite       = "{5AD3317E-0E97-4ec4-80C1-17245B3E620B},1"
+
+;;  digital encoder (Dolby or DTS) keys.
+PKEY_DGFX_Encoder_Selection		= "{D04E05A6-594B-4FB6-A80D-01AF5EED7D1D},131072"
+CTPKEY_Force_PhysicalSpeakers_with_Encoder = "{55B9923B-DD06-4605-9EF7-217AC8BAFD1B},0"
+
+CONTROLLER_EXT_UI_CLSID        = "{BF35B30D-65E6-434e-B3EA-26E0B4051F8D}"
+AUDIOENDPOINT_EXT_UI_CLSID     = "{AB8ED0BB-9F89-40bc-92C4-AE7DEA94970F}"
+SYSFX_UI_CLSID_KS              = "{361E7F16-C665-45d4-B5C3-B5FADC53650B}"
+SYSFX_PREMIX_CLSID_KS          = "{559493DD-3D1F-40a7-8E94-95762EAD6E95}"
+SYSFX_POSTMIX_CLSID_KS         = "{2EF9BA5B-FA37-4195-95C5-9483B6FE2104}"
+EFFECTNODEINFO_RENDER_KS       = "{B293EF73-0E2E-468b-B1C9-F083A3E5094C}"
+SYSFX_FriendlyName             = "Creative System Effect"
+
+CT_SYSFX_SFX_CLSID = "{E9B73398-425E-4c41-B4C9-F4D1E6922A27}"
+CT_SYSFX_MFX_CLSID = "{41528545-B167-495e-BB36-E11A17CF64B3}"
+
+MS_FX_UI_CLSID      = "{5860E1C5-F95C-4a7a-8EC8-8AEF24F379A1}"
+MS_FX_PREMIX_CLSID  = "{62dc1a93-ae24-464c-a43e-452f824c4250}"
+MS_FX_POSTMIX_CLSID = "{637c490d-eee3-4c0a-973f-371958802da2}"
+MS_FX_FriendlyName  = "Microsoft Audio Home Theater Effects"
+
+SC_CREATIVE         = "{ac6d33b1-0629-4d06-a0d6-73d896269347}"
+KSMALCCTL           = "{495E4C24-85ED-4f19-885E-C2D01D7EA26C}"	
+
+KSNODETYPE_ANY                     = "{00000000-0000-0000-0000-000000000000}"
+KSNODETYPE_SPEAKER                 = "{DFF21CE1-F70F-11D0-B917-00A0C9223196}"
+KSNODETYPE_HEADPHONES              = "{DFF21CE2-F70F-11D0-B917-00A0C9223196}"
+KSNODETYPE_LINE_CONNECTOR          = "{DFF21FE3-F70F-11D0-B917-00A0C9223196}"
+KSNODETYPE_ANALOG_CONNECTOR        = "{DFF21FE1-F70F-11D0-B917-00A0C9223196}"
+KSNODETYPE_MICROPHONE              = "{DFF21BE1-F70F-11D0-B917-00A0C9223196}"
+KSNODETYPE_DIGITAL_AUDIO_INTERFACE = "{DFF21FE2-F70F-11D0-B917-00A0C9223196}"
+KSNODETYPE_SPDIF_INTERFACE         = "{DFF21FE5-F70F-11D0-B917-00A0C9223196}"
+KSNODETYPE_MICROPHONE_ARRAY        	= "{DFF21BE5-F70F-11D0-B917-00A0C9223196}"
+KSNODETYPE_PROCESSING_MICROPHONE_ARRAY  = "{DFF21BE6-F70F-11D0-B917-00A0C9223196}"
+KSNODETYPE_PERSONAL_MICROPHONE		= "{DFF21BE3-F70F-11D0-B917-00A0C9223196}"
+KSNODETYPE_DOWN_LINE_PHONE		= "{DFF21EE3-F70F-11D0-B917-00A0C9223196}"
+JACK_RETASK_PROP_PAGE              	= "{5976E3CA-D6A2-4d0f-A011-A8E14D8BB8C9}"
+
+;; String for CoInstaller
+CoInstallerInfo            ="SYSTEM\CurrentControlSet\Control\Creative Tech\Coinstaller"
+CoInstallerName            ="kscoinst"
+DvInstallerName            ="ksUSBdvinst"
+DvININame                  ="ksUSBaud.ini"
+
+;;icon and endpoint name customisation
+PKEY_AudioEndpoint_Name		= "{a45c254e-df1c-4efd-8020-67d146a850e0},2"
+PKEY_AudioEndpoint_Icon		= "{259abffc-50a7-47ce-af08-68c9a7d73366},12"
+
+REG_MULTI_SZ = 0x00010000

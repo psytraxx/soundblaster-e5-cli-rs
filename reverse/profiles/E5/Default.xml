@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<profile>
+  <info>
+    <avatar>avatar_default.jpg</avatar>
+    <profile_name>Default</profile_name>
+    <profile_id>9</profile_id>
+    <version>2.0</version>
+  </info>
+  <settings>
+    <surround enable="true" level="0.12" />
+    <crystalizer enable="true" level="0.5" />
+    <bass enable="true" level="0.3" cross_freq="80" />
+    <svm enable="false" level="0.74" mode="0" />
+    <dlgplus enable="false" level="0.5" />
+    <voicefx enable="false" preset="1" />
+    <vip_svm enable="false" level="0.74" />
+    <noise_reduction enable="true" />
+    <aec enable="false" />
+    <voice_fcs enable="false" level="30" />
+    <mic_eq enable="false" preset="1" />
+    <graphic_eq enable="false" preset="1" preamp="0" band0="0" band1="0" band2="0" band3="0" band4="0" band5="0" band6="0" band7="0" band8="0" band9="0" />
+  </settings>
+</profile>

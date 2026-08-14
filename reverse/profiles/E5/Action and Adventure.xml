@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<profile>
+  <info>
+    <avatar>avatar_sword.jpg</avatar>
+    <profile_name>Adventure and Action</profile_name>
+    <profile_id>4</profile_id>
+    <version>2.0</version>
+  </info>
+  <settings>
+    <surround enable="true" level="0.55" />
+    <crystalizer enable="true" level="0.4" />
+    <bass enable="false" level="0.5" cross_freq="80" />
+    <svm enable="false" level="0.74" mode="0" />
+    <dlgplus enable="false" level="0.5" />
+    <voicefx enable="false" preset="1" />
+    <vip_svm enable="false" level="0.74" />
+    <noise_reduction enable="true" />
+    <aec enable="false" />
+    <voice_fcs enable="false" level="30" />
+    <mic_eq enable="false" preset="1" />
+    <graphic_eq enable="true" preset="0" preamp="0" band0="4" band1="4" band2="0" band3="-2" band4="2" band5="2" band6="1" band7="2" band8="4" band9="2" />
+  </settings>
+</profile>

@@ -1,0 +1,8 @@
+/target
+
+# Creative redistributable installer (57 MB) and decompiler output.
+# Kept locally as the provenance record; not committed.
+*.exe
+reverse/decompiled/
+reverse/bin/
+reverse/transport/

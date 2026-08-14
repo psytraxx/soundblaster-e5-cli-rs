@@ -1,0 +1,20 @@
+# Creative Sound Blaster E5 (and related E-Series / X7 / G5 devices).
+#
+# Grants the `plugdev` group access to the vendor control interface so
+# sbx-e5 can run without root.
+#
+#   sudo cp 60-sbx-e5.rules /etc/udev/rules.d/
+#   sudo udevadm control --reload-rules && sudo udevadm trigger
+#
+# Make sure your user is in plugdev:  sudo usermod -aG plugdev "$USER"
+
+SUBSYSTEM=="usb", ATTR{idVendor}=="041e", ATTR{idProduct}=="323c", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+
+# Sound Blaster E1
+SUBSYSTEM=="usb", ATTR{idVendor}=="041e", ATTR{idProduct}=="323b", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# Sound Blaster E3
+SUBSYSTEM=="usb", ATTR{idVendor}=="041e", ATTR{idProduct}=="323e", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# Sound Blaster X7
+SUBSYSTEM=="usb", ATTR{idVendor}=="041e", ATTR{idProduct}=="323a", MODE="0660", GROUP="plugdev", TAG+="uaccess"
+# Sound BlasterX G5
+SUBSYSTEM=="usb", ATTR{idVendor}=="041e", ATTR{idProduct}=="3243", MODE="0660", GROUP="plugdev", TAG+="uaccess"

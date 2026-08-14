@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<profile>
+  <info>
+    <avatar>avatar_map.jpg</avatar>
+    <profile_name>Real Time Strategy</profile_name>
+    <profile_id>8</profile_id>
+    <version>2.0</version>
+  </info>
+  <settings>
+    <surround enable="true" level="0.32" />
+    <crystalizer enable="true" level="0.5" />
+    <bass enable="false" level="0.5" cross_freq="80" />
+    <svm enable="false" level="0.74" mode="0" />
+    <dlgplus enable="true" level="0.35" />
+    <voicefx enable="false" preset="1" />
+    <vip_svm enable="false" level="0.74" />
+    <noise_reduction enable="true" />
+    <aec enable="false" />
+    <voice_fcs enable="false" level="30" />
+    <mic_eq enable="false" preset="1" />
+    <graphic_eq enable="true" preset="0" preamp="0" band0="0" band1="2" band2="-3" band3="-3" band4="-2" band5="-2" band6="-2" band7="2" band8="3" band9="0" />
+  </settings>
+</profile>
