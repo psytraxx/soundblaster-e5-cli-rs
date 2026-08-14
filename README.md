@@ -30,8 +30,9 @@ that byte layout has not been proven yet. Candidate layouts are expressed as
 a swappable `transport::Framing` strategy.
 
 **Nothing here is confirmed to change audio output on a real E5.** A
-`usbmon`/Wireshark capture of one bass-slider move on Windows would settle
-it outright.
+Wireshark capture of one bass-slider move on Windows would settle it
+outright — see **[docs/usb-capture.md](docs/usb-capture.md)** for the
+step-by-step procedure.
 
 ## Usage
 

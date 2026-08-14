@@ -26,6 +26,11 @@ Dates are `YYYY-MM-DD`.
   run with no hardware attached.
 - udev rule (`60-sbx-e5.rules`) for the E5 and related E-Series devices.
 - `README.md` and `CLAUDE.md`.
+- `docs/usb-capture.md` — procedure for capturing the E5 control protocol
+  with Wireshark/USBPcap on Windows (and verifying with `usbmon` on Linux),
+  including the display filters and the known little-endian `f32` byte
+  patterns to search for, plus how to feed results back into
+  `src/transport.rs`.
 
 #### Fixed
 - Level range validation now runs *before* any USB write, so an
