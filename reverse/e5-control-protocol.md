@@ -241,45 +241,14 @@ and `0x23`/`0x3f`/`0x22` (status).
 ## Capturing the SBX master toggle (open, needed)
 
 Every other opcode in this document was resolved from a **panel-open state
-sync** or a **slider sweep** -- neither exercises the master on/off button.
-To get the write (and pin down what the `0x25` read actually reads), the
-capture has to bracket a manual click on the SBX button itself.
+sync** or a **slider sweep** -- neither exercises the master on/off button,
+which is why its write path (and the true meaning of the `0x25` read) is
+still unconfirmed. Getting it needs a capture that specifically brackets a
+manual click on the SBX button, isolated from every other action.
 
-1. Follow the general Wireshark/USBPcap setup used for every other capture
-   in this file: install USBPcap, start Wireshark, filter on the E5's
-   `usb.device_address` (re-derive it per session -- see the note at the
-   top of this doc), start capturing *before* touching anything in the
-   Windows control panel.
-2. Open the Creative control panel with the capture already running, and
-   let it sit for a second or two -- this reproduces the `read.json`
-   panel-open poll sequence, which is useful as a landmark to line up
-   against.
-3. Click the SBX master button **off**, wait ~1s, click it **on**, wait
-   ~1s, click it **off** again. Isolate this from every other action --
-   don't touch a slider or another toggle in the same capture, so there's
-   no ambiguity about which write did what.
-4. Stop the capture, export as JSON (`File > Export Packet Dissections >
-   As JSON`, or `tshark -r capture.pcapng -T json`), and save it as
-   `reverse/read.json` (or a new file) so the decode script pattern used
-   for the panel-open sync applies unchanged.
-5. In the export, look at the `SET_REPORT` (`usb.bmRequestType == 0x21`)
-   writes issued right after each click -- filter on
-   `usbhid.setup.wIndex == 3 && usbhid.setup.bRequest == 0x09` and
-   `usb.data_fragment` for the payload. Compare the write immediately after
-   the "off" click against the one after "on": whatever byte(s) differ
-   between those two are the real write opcode and its off/on encoding.
-6. Cross-check against the interrupt-IN responses (`usb.endpoint_address
-   == 0x83`) that follow: if the control panel re-queries state right after
-   the click (as it does on open), the response should now visibly change
-   between the pre-click and post-click reads on whatever opcode/sub-byte
-   this doc currently calls `0x25 01 01`. If it's a *different* sub-byte or
-   a wholly different opcode, that supersedes the guess in
-   `transport::encode_set_sbx_master_guess` and
-   `transport::encode_get_status`.
-7. Update this section and `src/transport.rs`'s `encode_set_sbx_master_guess`/
-   `encode_get_status` with the confirmed bytes, move the row from
-   `Confidence::Derived`-as-a-guess to `Captured`, and note it in
-   `CHANGELOG.md`.
+Full step-by-step instructions, including Wireshark filters, what to diff,
+and how to feed the result back into `src/transport.rs`, are in
+[`docs/sbx-master-capture.md`](../docs/sbx-master-capture.md).
 
 ## Verified test vectors
 
