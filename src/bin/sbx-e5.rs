@@ -3,6 +3,7 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use indicatif::{ProgressBar, ProgressStyle};
+use sbx_e5::proto::{Crystalizer, DialogPlus, Feature, SimpleSurround, SmartVolume, XBass};
 use sbx_e5::transport::id;
 use sbx_e5::{SoundBlasterE5, transport};
 
@@ -82,8 +83,10 @@ enum Command {
 
     /// Turn the whole SBX suite on or off.
     Sbx {
-        #[arg(value_parser = ["on", "off"])]
-        state: String,
+        // `bool` would otherwise be inferred as a SetTrue flag; this is a
+        // positional that must actually take an `on`/`off` value.
+        #[arg(value_name = "on|off", action = clap::ArgAction::Set, value_parser = parse_on_off)]
+        on: bool,
     },
 
     /// Print the parameter id / selector table and how well each is known.
@@ -101,18 +104,25 @@ enum Setting {
     Enabled(bool),
 }
 
+/// Parse the bare `on`/`off` vocabulary shared by every switch.
+fn parse_on_off(s: &str) -> std::result::Result<bool, String> {
+    match s {
+        "on" => Ok(true),
+        "off" => Ok(false),
+        _ => Err(format!("expected `on` or `off`, got `{s}`")),
+    }
+}
+
 impl std::str::FromStr for Setting {
     type Err = String;
 
     fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
-        match s {
-            "on" => Ok(Setting::Enabled(true)),
-            "off" => Ok(Setting::Enabled(false)),
-            _ => s
-                .parse::<f32>()
-                .map(Setting::Level)
-                .map_err(|_| format!("expected a level in 0.0..=1.0, `on`, or `off`, got `{s}`")),
+        if let Ok(on) = parse_on_off(s) {
+            return Ok(Setting::Enabled(on));
         }
+        s.parse::<f32>()
+            .map(Setting::Level)
+            .map_err(|_| format!("expected a level in 0.0..=1.0, `on`, or `off`, got `{s}`"))
     }
 }
 
@@ -148,6 +158,77 @@ impl Command {
             _ => None,
         }
     }
+
+    /// The dB gain this command carries, if any. Separate from [`level`]:
+    /// these are not normalized and have their own range.
+    ///
+    /// [`level`]: Command::level
+    fn gain_db(&self) -> Option<f32> {
+        match *self {
+            Command::Treble { gain_db } => Some(gain_db),
+            Command::Eq { gain, .. } => Some(gain),
+            _ => None,
+        }
+    }
+}
+
+/// One SBX effect: the name it prints under, and the two parameters behind
+/// its on/off switch and its level.
+///
+/// Every effect is applied the same way, so they differ only in this data
+/// -- see [`apply`].
+struct Effect {
+    name: &'static str,
+    feature: Feature,
+    enable: u32,
+    level: u32,
+}
+
+const BASS: Effect = Effect {
+    name: "bass",
+    feature: Feature::EffectsXBass,
+    enable: XBass::Enable as u32,
+    level: XBass::Strength as u32,
+};
+const SURROUND: Effect = Effect {
+    name: "surround",
+    feature: Feature::EffectsSimpleSurround,
+    enable: SimpleSurround::Enable as u32,
+    level: SimpleSurround::Level as u32,
+};
+const CRYSTALIZER: Effect = Effect {
+    name: "crystalizer",
+    feature: Feature::EffectsCrystalizer,
+    enable: Crystalizer::Enable as u32,
+    level: Crystalizer::Level as u32,
+};
+const DIALOG_PLUS: Effect = Effect {
+    name: "dialog plus",
+    feature: Feature::EffectsDialogPlus,
+    enable: DialogPlus::Enable as u32,
+    level: DialogPlus::Strength as u32,
+};
+const SMART_VOLUME: Effect = Effect {
+    name: "smart volume",
+    feature: Feature::EffectsSmartVolume,
+    enable: SmartVolume::Enable as u32,
+    level: SmartVolume::Strength as u32,
+};
+
+/// Apply a setting to one effect and report it.
+///
+/// Setting a level enables the effect first, so `crystalizer 0.5` does the
+/// obvious thing; `off` disables without disturbing the stored level.
+fn apply(dev: &mut SoundBlasterE5, effect: &Effect, setting: Setting) -> Result<()> {
+    match setting {
+        Setting::Enabled(on) => dev.set_enable_raw(effect.feature, effect.enable, on)?,
+        Setting::Level(level) => {
+            dev.set_enable_raw(effect.feature, effect.enable, true)?;
+            dev.set_level_raw(effect.feature, effect.level, level)?;
+        }
+    }
+    println!("{} = {}", effect.name, setting.describe());
+    Ok(())
 }
 
 fn main() -> Result<()> {
@@ -155,142 +236,98 @@ fn main() -> Result<()> {
 
     // No subcommand: open the interactive UI.
     let Some(command) = cli.command else {
-        let mut dev = SoundBlasterE5::open(cli.dry_run)
-            .map_err(|e| anyhow::anyhow!(e.to_string()))
-            .context("opening the Sound Blaster E5")?;
-        return sbx_e5::tui::run(&mut dev).map_err(|e| anyhow::anyhow!(e.to_string()));
+        let mut dev = SoundBlasterE5::open(cli.dry_run).context("opening the Sound Blaster E5")?;
+        return sbx_e5::tui::run(&mut dev).context("running the interactive UI");
     };
 
-    if let Command::Info = command {
-        match transport::dump_descriptors() {
-            Ok(text) => {
-                print!("{text}");
-                return Ok(());
-            }
-            Err(e) => {
-                return Err(anyhow::anyhow!(e)).context("scanning USB for a Sound Blaster E5");
-            }
+    // Neither of these needs a device open, so they answer before the
+    // connection attempt that would fail without one plugged in.
+    match command {
+        Command::Info => {
+            let text =
+                transport::dump_descriptors().context("scanning USB for a Sound Blaster E5")?;
+            print!("{text}");
+            return Ok(());
         }
+        Command::Selectors => {
+            print_selectors();
+            return Ok(());
+        }
+        _ => {}
     }
 
-    if let Command::Selectors = command {
-        print_selectors();
-        return Ok(());
-    }
-
-    let mut dev = SoundBlasterE5::open(cli.dry_run)
-        .map_err(|e| anyhow::anyhow!(e))
-        .context("opening the Sound Blaster E5")?;
+    let mut dev = SoundBlasterE5::open(cli.dry_run).context("opening the Sound Blaster E5")?;
 
     if dev.is_dry_run() {
         eprintln!("(dry run: nothing is sent to any device)\n");
     }
 
-    // Reject an out-of-range level before writing anything, so a bad
-    // argument can never leave the device half-configured.
+    // Reject an out-of-range argument before writing anything, so a bad
+    // one can never leave the device half-configured. The library checks
+    // again per write; this is what makes a multi-write command like
+    // `treble` all-or-nothing.
     if let Some(level) = command.level() {
         anyhow::ensure!(
             (0.0..=1.0).contains(&level),
             "level {level} outside 0.0..=1.0"
         );
     }
+    if let Some(gain) = command.gain_db() {
+        let (lo, hi) = sbx_e5::EQ_GAIN_DB;
+        anyhow::ensure!(
+            (lo..=hi).contains(&gain),
+            "gain {gain} dB outside {lo}..={hi}"
+        );
+    }
 
     match command {
-        Command::Info => unreachable!("handled above"),
+        // Handled above, before the device was opened.
+        Command::Info | Command::Selectors => {}
 
         Command::Bass { setting, crossover } => {
-            match setting {
-                Setting::Enabled(on) => dev.set_bass_enabled(on).map_err(err)?,
-                Setting::Level(level) => {
-                    dev.set_bass_enabled(true).map_err(err)?;
-                    dev.set_bass(level).map_err(err)?;
-                }
-            }
+            apply(&mut dev, &BASS, setting)?;
             if let Some(hz) = crossover {
                 // The crossover has no id in the table, so this may fail.
                 optional(dev.set_bass_crossover(hz), "bass crossover")?;
             }
-            println!("bass = {}", setting.describe());
         }
 
         Command::Treble { gain_db } => {
-            // set_treble writes several bands; show progress since a
-            // partial failure leaves the EQ half-applied.
-            let bar = bar(4, "treble bands");
-            dev.set_eq_enabled(true).map_err(err)?;
-            for band in 6..10u8 {
-                dev.set_eq_band(band, gain_db).map_err(err)?;
+            // This writes several bands; show progress since a partial
+            // failure would leave the EQ half-applied.
+            let bands = sbx_e5::TREBLE_BANDS;
+            let bar = bar(bands.len() as u64, "treble bands");
+            dev.set_eq_enabled(true)?;
+            for band in bands.clone() {
+                dev.set_eq_band(band, gain_db)?;
                 bar.inc(1);
             }
             bar.finish_and_clear();
-            println!("treble = {gain_db:+} dB (EQ bands 6-9)");
+            println!(
+                "treble = {gain_db:+} dB (EQ bands {}-{})",
+                bands.start,
+                bands.end - 1
+            );
         }
 
-        Command::Surround { setting } => {
-            match setting {
-                Setting::Enabled(on) => dev.set_surround_enabled(on).map_err(err)?,
-                Setting::Level(level) => {
-                    dev.set_surround_enabled(true).map_err(err)?;
-                    dev.set_surround(level).map_err(err)?;
-                }
-            }
-            println!("surround = {}", setting.describe());
-        }
-
-        Command::Crystalizer { setting } => {
-            match setting {
-                Setting::Enabled(on) => dev.set_crystalizer_enabled(on).map_err(err)?,
-                Setting::Level(level) => {
-                    dev.set_crystalizer_enabled(true).map_err(err)?;
-                    dev.set_crystalizer(level).map_err(err)?;
-                }
-            }
-            println!("crystalizer = {}", setting.describe());
-        }
-
-        Command::DialogPlus { setting } => {
-            match setting {
-                Setting::Enabled(on) => dev.set_dialog_plus_enabled(on).map_err(err)?,
-                Setting::Level(level) => {
-                    dev.set_dialog_plus_enabled(true).map_err(err)?;
-                    dev.set_dialog_plus(level).map_err(err)?;
-                }
-            }
-            println!("dialog plus = {}", setting.describe());
-        }
-
-        Command::SmartVolume { setting } => {
-            match setting {
-                Setting::Enabled(on) => dev.set_smart_volume_enabled(on).map_err(err)?,
-                Setting::Level(level) => {
-                    dev.set_smart_volume_enabled(true).map_err(err)?;
-                    dev.set_smart_volume(level).map_err(err)?;
-                }
-            }
-            println!("smart volume = {}", setting.describe());
-        }
+        Command::Surround { setting } => apply(&mut dev, &SURROUND, setting)?,
+        Command::Crystalizer { setting } => apply(&mut dev, &CRYSTALIZER, setting)?,
+        Command::DialogPlus { setting } => apply(&mut dev, &DIALOG_PLUS, setting)?,
+        Command::SmartVolume { setting } => apply(&mut dev, &SMART_VOLUME, setting)?,
 
         Command::Eq { band, gain } => {
-            dev.set_eq_enabled(true).map_err(err)?;
-            dev.set_eq_band(band, gain).map_err(err)?;
+            dev.set_eq_enabled(true)?;
+            dev.set_eq_band(band, gain)?;
             println!("eq band {band} = {gain:+} dB");
         }
 
-        Command::Sbx { state } => {
-            let on = state == "on";
-            let got = dev.set_sbx_master(on).map_err(err)?;
+        Command::Sbx { on } => {
+            let got = dev.set_sbx_master(on)?;
             println!("sbx = {}", if got { "on" } else { "off" });
         }
-
-        Command::Selectors => unreachable!("handled above"),
     }
 
     Ok(())
-}
-
-/// Convert a device error into an `anyhow` error, preserving the message.
-fn err(e: sbx_e5::Error) -> anyhow::Error {
-    anyhow::anyhow!(e.to_string())
 }
 
 /// Run a write that is nice-to-have rather than the point of the command.
@@ -305,7 +342,7 @@ fn optional(r: sbx_e5::Result<()>, what: &str) -> Result<()> {
             eprintln!("note: skipping {what} (no known wire encoding)");
             Ok(())
         }
-        Err(e) => Err(err(e)),
+        Err(e) => Err(e.into()),
     }
 }
 
@@ -313,25 +350,9 @@ fn optional(r: sbx_e5::Result<()>, what: &str) -> Result<()> {
 fn print_selectors() {
     use sbx_e5::transport::selector_of;
 
-    let rows: &[(&str, u8)] = &[
-        ("surround enable", id::SURROUND_ENABLE),
-        ("surround level", id::SURROUND_LEVEL),
-        ("dialog+ enable", id::DIALOG_PLUS_ENABLE),
-        ("dialog+ level", id::DIALOG_PLUS_LEVEL),
-        ("smart volume enable", id::SMART_VOLUME_ENABLE),
-        ("smart volume level", id::SMART_VOLUME_LEVEL),
-        ("smart volume mode", id::SMART_VOLUME_MODE),
-        ("crystalizer enable", id::CRYSTALIZER_ENABLE),
-        ("crystalizer level", id::CRYSTALIZER_LEVEL),
-        ("eq enable", id::EQ_ENABLE),
-        ("eq preamp", id::EQ_PREAMP),
-        ("bass enable", id::BASS_ENABLE),
-        ("bass level", id::BASS_LEVEL),
-    ];
-
     println!("  id   sel   parameter");
-    for (name, id) in rows {
-        println!("  0x{id:02x}  0x{:02x}  {name}", selector_of(*id));
+    for &(name, id) in id::TABLE {
+        println!("  0x{id:02x}  0x{:02x}  {name}", selector_of(id));
     }
     for band in 0..10u8 {
         let id = id::EQ_BAND0 + band;
