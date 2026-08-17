@@ -15,14 +15,19 @@ The wire format was recovered from a USBPcap capture of the Windows driver
 [reverse/e5-control-protocol.md](reverse/e5-control-protocol.md).
 Control parameters travel as HID `SET_REPORT` writes on the control pipe: a
 64-byte report, a one-byte parameter selector, and a big-endian `f32` value.
+Reads use the same kind of write to pose a query, then collect the answer on
+the interrupt endpoint rather than through `GET_REPORT`.
 
-**Bass is confirmed on real hardware** — `bass 0` vs `bass 1` is audibly
-different on an E5. Every other effect's selector is *derived*: the driver
+Confirmed on real hardware: **bass** (`bass 0` vs `bass 1` is audibly
+different), **reading current settings back** from the device, and the
+**SBX master switch** in both directions.
+
+Every other effect's selector is *derived* rather than captured. The driver
 builds the selector byte as `parameter_id << 1`, and the ids come from the
-published table for the Sound Blaster G6 (same vendor and driver family, a
-different device). Both selectors independently known for the E5 — bass and
-surround — fall out of that rule exactly, which is good evidence, not proof.
-Run `sbx-e5 selectors` to see the full table and which entries are which.
+published table for the Sound Blaster G6 — same vendor and driver family,
+but a different device. Both selectors independently known for the E5, bass
+and surround, fall out of that rule exactly. That is good evidence, not
+proof. Run `sbx-e5 selectors` to see which entries are which.
 
 ## Usage
 
