@@ -24,3 +24,11 @@ Dates are `YYYY-MM-DD`. See the README's TODO section for known gaps.
 - The SBX master switch can now be switched on and off from the command
   line and the terminal UI, and its current state is shown on startup like
   every other effect.
+
+#### Fixed
+- Toggling the SBX master switch reported an error and left the display
+  stuck on the old state, even though the switch itself had changed. The
+  device sends several status messages at once when it switches, and only
+  the first was being looked at; now they are read until the relevant one
+  turns up. The same problem could make any value read return a stale
+  answer.

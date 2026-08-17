@@ -150,6 +150,25 @@ The driver does **not** use GET_REPORT (`bRequest=0x01`). Instead:
 
 The response echoes the query opcode in byte 1, so responses pair to queries.
 
+**One query does not mean one report.** The endpoint carries unsolicited
+reports too, so the next report off the pipe is often not the answer to the
+query just sent. Around a master toggle the device emits four in a row:
+
+```
+OUT 23 23 01 01           enable write
+IN  00 23 23 00 01 01     the write's own echo
+OUT 23 24 00              commit / read query
+IN  00 26 01 96 07 ...    unsolicited level ramp (crystalizer)
+IN  00 26 01 96 18 ...    unsolicited level ramp (bass)
+IN  00 23 24 00 01 00 01  the commit response -- fourth in the queue
+```
+
+A reader that takes the first report gets the `0x23 0x23` echo instead of
+the `0x23 0x24` answer, and leaves three reports queued so every later read
+is answered by a stale one. Read until a report actually matches the query
+(echoed opcode, and for `0x26` the echoed parameter id), discarding the
+rest, and treat a timeout as "the answer never came".
+
 ### Query report (out)
 
 ```

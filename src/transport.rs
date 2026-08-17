@@ -605,13 +605,10 @@ impl Transport {
         }
 
         self.write_raw(&query)?;
-        let buf = self.read_interrupt()?;
-        let (got_id, value) =
-            decode_get_param_response(&buf).ok_or(Error::UnexpectedResponse { id })?;
-        if got_id != id {
-            return Err(Error::UnexpectedResponse { id });
-        }
-        Ok(value)
+        self.read_matching(id, |buf| match decode_get_param_response(buf) {
+            Some((got_id, value)) if got_id == id => Some(value),
+            _ => None,
+        })
     }
 
     /// Read a float-typed parameter back from the device.
@@ -639,8 +636,7 @@ impl Transport {
 
         self.write_raw(&write)?;
         self.write_raw(&commit)?;
-        let buf = self.read_interrupt()?;
-        decode_master_commit_response(&buf).ok_or(Error::UnexpectedResponse { id: 0 })
+        self.read_matching(0, decode_master_commit_response)
     }
 
     /// Read the SBX master switch without changing it.
@@ -659,8 +655,40 @@ impl Transport {
         }
 
         self.write_raw(&query)?;
-        let buf = self.read_interrupt()?;
-        decode_master_commit_response(&buf).ok_or(Error::UnexpectedResponse { id: 0 })
+        self.read_matching(0, decode_master_commit_response)
+    }
+
+    /// Read interrupt reports until `decode` accepts one, or the endpoint
+    /// runs dry.
+    ///
+    /// The device does not answer one query with exactly one report. A
+    /// master toggle, for instance, emits the `0x23 0x23` write's own echo
+    /// *and* a burst of unsolicited `0x26` level-ramp reports before the
+    /// `0x23 0x24` response the caller is waiting for. Taking the first
+    /// report off the endpoint therefore grabs the wrong one and leaves the
+    /// rest queued, so every later read is answered by a stale report.
+    ///
+    /// Reading until a report actually matches keeps the queue drained and
+    /// each query paired with its own answer.
+    fn read_matching<T>(&mut self, id: u8, decode: impl Fn(&[u8]) -> Option<T>) -> Result<T> {
+        // Generous enough for the ramp bursts seen in the captures, while
+        // still terminating if the device answers with something we cannot
+        // parse at all.
+        const MAX_REPORTS: usize = 32;
+
+        for _ in 0..MAX_REPORTS {
+            let buf = match self.read_interrupt() {
+                Ok(buf) => buf,
+                // A timeout means the endpoint is drained and the answer
+                // never came, which is a mismatch rather than a USB fault.
+                Err(Error::Usb(rusb::Error::Timeout)) => break,
+                Err(e) => return Err(e),
+            };
+            if let Some(value) = decode(&buf) {
+                return Ok(value);
+            }
+        }
+        Err(Error::UnexpectedResponse { id })
     }
 
     /// Read one 16-byte HID input report from the interrupt endpoint the
@@ -968,6 +996,53 @@ mod tests {
     fn master_commit_response_rejects_wrong_opcode() {
         let buf = hex("00260100961943000000000000".to_string());
         assert_eq!(decode_master_commit_response(&buf), None);
+    }
+
+    /// One master toggle produces four interrupt reports, and the one the
+    /// caller wants is last. Taking the first -- as the code originally did
+    /// -- picks the `0x23 0x23` write echo, fails to decode it as a commit
+    /// response, and leaves three reports queued to desync every later read.
+    ///
+    /// Exact sequence from `reverse/captures/sbx.json`, frames 1138-1146.
+    #[test]
+    fn master_commit_response_is_found_past_the_reports_that_precede_it() {
+        let burst = [
+            hex("002323000101000000000000".to_string()), // 0x23 0x23 write echo
+            hex("0026010096073f8000000000".to_string()), // unsolicited level ramp
+            hex("0026010096183f8000000000".to_string()), // unsolicited level ramp
+            hex("002324000100010000000000".to_string()), // the commit response
+        ];
+
+        // Everything before the commit response must be skipped, not accepted
+        // and not treated as a hard error.
+        for buf in &burst[..3] {
+            assert_eq!(decode_master_commit_response(buf), None);
+        }
+        assert_eq!(decode_master_commit_response(&burst[3]), Some(true));
+
+        // Scanning the burst in order finds exactly one answer.
+        let found: Vec<bool> = burst
+            .iter()
+            .filter_map(|b| decode_master_commit_response(b))
+            .collect();
+        assert_eq!(found, vec![true]);
+    }
+
+    /// The same desync hazard on the value-read path: a queued response for
+    /// a different id must be skipped rather than aborting the read.
+    #[test]
+    fn get_param_response_for_another_id_is_skipped_not_fatal() {
+        let stale = hex("0026010096083f23d70a0000".to_string()); // id 0x08
+        let wanted = hex("0026010096193f0000000000".to_string()); // id 0x19
+
+        let want = id::BASS_LEVEL;
+        let matching = |b: &[u8]| match decode_get_param_response(b) {
+            Some((got, v)) if got == want => Some(v),
+            _ => None,
+        };
+
+        assert_eq!(matching(&stale), None);
+        assert_eq!(matching(&wanted), Some(0.5));
     }
 
     /// Decode a hex string (no separators) into bytes, for response fixtures.
