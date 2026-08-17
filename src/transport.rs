@@ -317,7 +317,7 @@ pub fn encode_master() -> [u8; REPORT_LEN] {
 
 /// Build a `0x26` GET_PARAM query report for a raw parameter id.
 ///
-/// Wire-confirmed in `reverse/read.json`: `26 01 96 <id>` sent as a normal
+/// Wire-confirmed in `reverse/captures/read.json`: `26 01 96 <id>` sent as a normal
 /// SET_REPORT, answered on interrupt IN endpoint `0x83` with
 /// `00 26 01 96 00 <id> <f32 big-endian>`. `id` here is the **raw** id
 /// (e.g. `0x19` for bass level), not `id << 1`.
@@ -332,7 +332,7 @@ pub fn encode_get_param(id: u8) -> [u8; REPORT_LEN] {
 
 /// Build the `0x23 0x23` SBX master enable/disable report.
 ///
-/// Wire-confirmed in `reverse/sbx.json` across two full on/off cycles:
+/// Wire-confirmed in `reverse/captures/sbx.json` across two full on/off cycles:
 /// `23 23 01 01` precedes each fade-in, `23 23 01 00` precedes each
 /// fade-out. See `reverse/e5-control-protocol.md`, "`0x23` -- SBX master
 /// enable / keepalive".
@@ -363,7 +363,7 @@ pub fn encode_master_commit() -> [u8; REPORT_LEN] {
 /// Parse a `0x23 0x24` commit response (16 bytes from the interrupt
 /// endpoint) for the state bit it echoes back.
 ///
-/// Wire-confirmed in `reverse/sbx.json` across all four toggles in two
+/// Wire-confirmed in `reverse/captures/sbx.json` across all four toggles in two
 /// on/off cycles: the commit that follows `encode_set_sbx_master` always
 /// answers with the master state at offset 4 -- `00 23 24 00 01 00 01`
 /// after turning on, `00 23 24 00 00 00 01` after turning off. This is the
@@ -593,7 +593,7 @@ impl Transport {
 
     /// Send a raw `0x26` GET_PARAM query and read back the response.
     ///
-    /// Wire-confirmed in `reverse/read.json`: the query is an ordinary
+    /// Wire-confirmed in `reverse/captures/read.json`: the query is an ordinary
     /// SET_REPORT, the answer arrives on interrupt IN endpoint `0x83`. `id`
     /// is the raw parameter id, not the `id << 1` write selector.
     pub fn get_param_raw(&mut self, id: u8) -> Result<f32> {
@@ -623,7 +623,7 @@ impl Transport {
 
     /// Write the SBX master switch: `0x23 0x23` enable/disable followed by
     /// the `0x23 0x24` commit the panel always sends after it. Both are
-    /// wire-confirmed in `reverse/sbx.json` -- see [`encode_set_sbx_master`].
+    /// wire-confirmed in `reverse/captures/sbx.json` -- see [`encode_set_sbx_master`].
     ///
     /// The commit's own response echoes the resulting state (see
     /// [`decode_master_commit_response`]), so this returns what the device
@@ -645,7 +645,7 @@ impl Transport {
 
     /// Read the SBX master switch without changing it.
     ///
-    /// Wire-confirmed in `reverse/read.json`: the panel-open sync sends a
+    /// Wire-confirmed in `reverse/captures/read.json`: the panel-open sync sends a
     /// bare `0x23 0x24` commit query with no preceding `0x23 0x23` write,
     /// and gets the current master state back on the same response shape
     /// [`Self::set_sbx_master`] reads. So `0x23 0x24` alone is a standalone

@@ -139,7 +139,8 @@ the enable state.
 
 ## Read path (query → interrupt IN) — CONFIRMED
 
-Wire-confirmed 2026-08-17 (`read.json`, device address 9, bus 4 / USBPcap4).
+Wire-confirmed 2026-08-17 (`captures/read.json`, device address 9, bus 4 /
+USBPcap4).
 The driver does **not** use GET_REPORT (`bRequest=0x01`). Instead:
 
 1. Write a query as a normal SET_REPORT (`0x21 09 0200 0003`, 64-byte report).
@@ -315,8 +316,10 @@ fn encode_set_param(param: u8, value: f32) -> [u8; 64] {
 
 ## Captures
 
-- `capture.pcapng` — mixed session: SBX Studio toggle, Surround→55%, Bass enable→26%→disable.
-- Bass 0→100% sweep (JSON export) — the definitive value-path capture.
+All in `captures/` (JSON exports of Wireshark/USBPcap sessions):
+
+- `capture_bass.json` — Bass 0→100% slider sweep, 274 packets, selector
+  `0x32` only. The definitive `0x20` SET_PARAM value-path capture.
 - `read.json` — panel-open state sync, address 9 / USBPcap4. Contains the
   confirmed read handshake (query out → interrupt IN on ep 0x83).
 - `sbx.json` — two full SBX master on/off cycles. Contains the confirmed
