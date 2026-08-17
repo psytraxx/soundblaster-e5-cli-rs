@@ -126,6 +126,43 @@ fn encode_set_param(param: u8, value: f32) -> [u8; 64] {
 - GET_REPORT round-trip read (`bRequest=0x01`) as a parse-confirmation signal.
 - Audible A/B (`bass 0.0` vs `bass 1.0`) before dropping "unverified" caveats.
 
+## Device state read (not yet captured)
+
+No `GET_REPORT` (`bRequest=0x01`) transaction has ever appeared in a capture —
+every existing `.pcapng`/JSON export only contains the write path above. This
+is a real gap, not an oversight: the write-focused captures were taken while
+*changing* sliders, which never exercises a read.
+
+Decompiled `KSUSBSPI32.dll` (`reverse/decompiled/KSUSBSPI32.dll.c`,
+`FUN_0042c334`/`FUN_0042c35e`, around line 39054 and the call sites near
+line 40303) shows the driver's read procedure: write a short query buffer via
+`SET_REPORT`, sleep ~20ms, then call `HidD_GetInputReport` (wire-equivalent
+of a control transfer with `bRequest=0x01`, `wValue`=Input report type,
+`wIndex=3`), validate response header bytes, retry up to 10x. The query
+buffer's opcode bytes (`0x8001000`, subcommand `0x50`/`0x52`) come from static
+disassembly only — **not wire-confirmed, and possibly not even for the same
+param-value feature** (`Interop.CtSndCr.dll` exposes several distinct `Get*`
+calls: `GetParamValue`, `GetParamInfo`, `GetFeatureInfo`, `GetContext`/
+`GetContextInfo`). Treat these bytes as a lead, not a spec.
+
+**To capture a real read**, the write-path recipe (see capture setup above)
+needs a different trigger, since dragging a slider only writes. Try:
+
+1. Start the USBPcap capture *before* launching the Windows control panel
+   (SBX Studio / Creative app), so the initial state sync on open is caught.
+2. With the capture still running, close and reopen the control panel (or
+   switch away to another app's audio tab and back) after having changed a
+   value via `sbx-e5` — a state resync on focus/reopen is the most likely
+   place the app issues `GetParamValue` reads.
+3. Filter the capture on `bRequest == 0x01` (GET_REPORT) or on any `SET_REPORT`
+   whose first byte is *not* `0x20`/`0x26`/`0x23`, paired with an IN transfer
+   immediately after — that pairing is the signature described above.
+4. Once found, add the confirmed request/response byte layout to this file
+   under a new `### GET_REPORT — query` section, following the same
+   offset-table format as `0x20` above, and cite the capture file.
+
+Until then, no read path should be implemented against guessed opcodes.
+
 ## Captures
 
 - `capture.pcapng` — mixed session: SBX Studio toggle, Surround→55%, Bass enable→26%→disable.
