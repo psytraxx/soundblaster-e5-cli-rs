@@ -343,28 +343,47 @@ impl App {
     }
 }
 
+/// Puts the terminal into raw/alternate-screen mode, and restores it on the
+/// way out.
+///
+/// This is a guard rather than a pair of calls around the event loop so the
+/// restore also runs when the loop *panics*. Unwinding past a bare
+/// `disable_raw_mode()` would otherwise drop the user back into a shell
+/// with no echo and no cursor.
+struct TerminalGuard;
+
+impl TerminalGuard {
+    fn enter() -> Result<Self> {
+        enable_raw_mode()?;
+        let mut out = io::stdout();
+        out.execute(EnterAlternateScreen)?;
+        out.execute(EnableMouseCapture)?;
+        Ok(Self)
+    }
+}
+
+impl Drop for TerminalGuard {
+    fn drop(&mut self) {
+        // Best-effort: this runs while unwinding, where returning an error
+        // is not an option and panicking again would abort the process.
+        let _ = disable_raw_mode();
+        let mut out = io::stdout();
+        let _ = out.execute(LeaveAlternateScreen);
+        let _ = out.execute(DisableMouseCapture);
+        let _ = out.execute(crossterm::cursor::Show);
+    }
+}
+
 /// Run the interactive UI until the user quits.
 pub fn run(dev: &mut SoundBlasterE5) -> Result<()> {
     let mut app = App::new(dev.is_dry_run());
     app.refresh_from_device(dev);
 
-    enable_raw_mode()?;
-    let mut out = io::stdout();
-    out.execute(EnterAlternateScreen)?;
-    out.execute(EnableMouseCapture)?;
-    let backend = CrosstermBackend::new(out);
+    let _guard = TerminalGuard::enter()?;
+    let backend = CrosstermBackend::new(io::stdout());
     let mut terminal = Terminal::new(backend)?;
 
-    let result = event_loop(&mut terminal, &mut app, dev);
-
-    // Restore the terminal even if the loop failed, so a crash cannot
-    // leave the shell in raw mode.
-    disable_raw_mode()?;
-    terminal.backend_mut().execute(LeaveAlternateScreen)?;
-    terminal.backend_mut().execute(DisableMouseCapture)?;
-    terminal.show_cursor()?;
-
-    result
+    event_loop(&mut terminal, &mut app, dev)
 }
 
 fn event_loop(

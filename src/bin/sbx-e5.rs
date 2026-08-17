@@ -158,6 +158,18 @@ impl Command {
             _ => None,
         }
     }
+
+    /// The dB gain this command carries, if any. Separate from [`level`]:
+    /// these are not normalized and have their own range.
+    ///
+    /// [`level`]: Command::level
+    fn gain_db(&self) -> Option<f32> {
+        match *self {
+            Command::Treble { gain_db } => Some(gain_db),
+            Command::Eq { gain, .. } => Some(gain),
+            _ => None,
+        }
+    }
 }
 
 /// One SBX effect: the name it prints under, and the two parameters behind
@@ -250,12 +262,21 @@ fn main() -> Result<()> {
         eprintln!("(dry run: nothing is sent to any device)\n");
     }
 
-    // Reject an out-of-range level before writing anything, so a bad
-    // argument can never leave the device half-configured.
+    // Reject an out-of-range argument before writing anything, so a bad
+    // one can never leave the device half-configured. The library checks
+    // again per write; this is what makes a multi-write command like
+    // `treble` all-or-nothing.
     if let Some(level) = command.level() {
         anyhow::ensure!(
             (0.0..=1.0).contains(&level),
             "level {level} outside 0.0..=1.0"
+        );
+    }
+    if let Some(gain) = command.gain_db() {
+        let (lo, hi) = sbx_e5::EQ_GAIN_DB;
+        anyhow::ensure!(
+            (lo..=hi).contains(&gain),
+            "gain {gain} dB outside {lo}..={hi}"
         );
     }
 
@@ -272,16 +293,21 @@ fn main() -> Result<()> {
         }
 
         Command::Treble { gain_db } => {
-            // set_treble writes several bands; show progress since a
-            // partial failure leaves the EQ half-applied.
-            let bar = bar(4, "treble bands");
+            // This writes several bands; show progress since a partial
+            // failure would leave the EQ half-applied.
+            let bands = sbx_e5::TREBLE_BANDS;
+            let bar = bar(bands.len() as u64, "treble bands");
             dev.set_eq_enabled(true)?;
-            for band in 6..10u8 {
+            for band in bands.clone() {
                 dev.set_eq_band(band, gain_db)?;
                 bar.inc(1);
             }
             bar.finish_and_clear();
-            println!("treble = {gain_db:+} dB (EQ bands 6-9)");
+            println!(
+                "treble = {gain_db:+} dB (EQ bands {}-{})",
+                bands.start,
+                bands.end - 1
+            );
         }
 
         Command::Surround { setting } => apply(&mut dev, &SURROUND, setting)?,

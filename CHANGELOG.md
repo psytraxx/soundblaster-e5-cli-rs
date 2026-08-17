@@ -26,6 +26,15 @@ Dates are `YYYY-MM-DD`. See the README's TODO section for known gaps.
   every other effect.
 
 #### Fixed
+- Equalizer and treble settings are now checked before anything is sent.
+  Asking for an absurd gain — `treble 500` — used to be passed straight to
+  the device; it is now refused with a message, as out-of-range levels
+  already were. The accepted range is -12 to +12 dB.
+- Asking for an equalizer band that does not exist is now refused instead
+  of quietly changing the highest band instead.
+- If the interactive UI ever crashes, it now puts the terminal back the way
+  it found it. Previously a crash could leave the shell with no cursor and
+  no echo, needing a `reset` to recover.
 - Toggling the SBX master switch reported an error and left the display
   stuck on the old state, even though the switch itself had changed. The
   device sends several status messages at once when it switches, and only

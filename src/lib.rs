@@ -25,8 +25,11 @@ pub enum Error {
     AccessDenied,
     /// Underlying USB failure.
     Usb(rusb::Error),
-    /// A level argument was outside `0.0..=1.0`.
-    OutOfRange(f32),
+    /// A numeric argument was outside the range the parameter accepts:
+    /// the value, then the inclusive bounds it had to fall between.
+    OutOfRange { value: f32, lo: f32, hi: f32 },
+    /// An EQ band index was outside `0..=9`.
+    NoSuchBand(u8),
     /// The parameter has no known wire encoding, and guessing a selector
     /// could set something else entirely.
     Unsupported { feature: Feature, param: u32 },
@@ -52,7 +55,12 @@ impl std::fmt::Display for Error {
                 "permission denied opening the E5; install the udev rule (see README)"
             ),
             Error::Usb(e) => write!(f, "usb error: {e}"),
-            Error::OutOfRange(v) => write!(f, "level {v} outside 0.0..=1.0"),
+            Error::OutOfRange { value, lo, hi } => {
+                write!(f, "value {value} outside {lo}..={hi}")
+            }
+            Error::NoSuchBand(band) => {
+                write!(f, "no EQ band {band}; the equalizer has bands 0..=9")
+            }
             Error::Io(e) => write!(f, "terminal error: {e}"),
             Error::Unsupported { feature, param } => write!(
                 f,
@@ -81,6 +89,29 @@ impl From<rusb::Error> for Error {
 
 pub type Result<T> = std::result::Result<T, Error>;
 
+/// Inclusive dB bounds accepted for an EQ band gain and for the treble
+/// shelf built on top of it.
+///
+/// Unlike the selector table, this bound is *not* from a capture: it is the
+/// range the Windows control panel exposes on its sliders. Creative's own
+/// profiles only ever use -3..=+6, so the endpoints are unconfirmed on
+/// hardware. It is here to stop a typo sending an absurd gain, not because
+/// the device is known to reject anything outside it.
+pub const EQ_GAIN_DB: (f32, f32) = (-12.0, 12.0);
+
+/// The EQ bands the treble shelf drives -- the top four, matching what the
+/// Creative control panel's treble slider moves.
+pub const TREBLE_BANDS: std::ops::Range<u8> = 6..10;
+
+/// Reject a value outside its parameter's inclusive range, before any write
+/// goes out. NaN fails too: it compares false against both bounds.
+fn check_range(value: f32, lo: f32, hi: f32) -> Result<()> {
+    if !(lo..=hi).contains(&value) {
+        return Err(Error::OutOfRange { value, lo, hi });
+    }
+    Ok(())
+}
+
 /// A connected Sound Blaster E5.
 pub struct SoundBlasterE5 {
     transport: Transport,
@@ -104,9 +135,7 @@ impl SoundBlasterE5 {
 
     /// Set a normalized effect level, `0.0..=1.0`.
     fn set_level(&mut self, feature: Feature, param: u32, level: f32) -> Result<()> {
-        if !(0.0..=1.0).contains(&level) {
-            return Err(Error::OutOfRange(level));
-        }
+        check_range(level, 0.0, 1.0)?;
         self.transport.set_float(feature, param, level)
     }
 
@@ -170,7 +199,12 @@ impl SoundBlasterE5 {
     }
 
     /// Set the bass crossover frequency in Hz. Stock profiles use `80.0`.
+    ///
+    /// The bound is a sanity check on a plausible crossover, not a captured
+    /// device limit -- this parameter has no id in the selector table yet,
+    /// so the write is rejected as [`Error::Unsupported`] regardless.
     pub fn set_bass_crossover(&mut self, hz: f32) -> Result<()> {
+        check_range(hz, 10.0, 1000.0)?;
         self.transport
             .set_float(Feature::EffectsXBass, XBass::FreqHz as u32, hz)
     }
@@ -248,12 +282,18 @@ impl SoundBlasterE5 {
         )
     }
 
-    /// Set the gain of one EQ band, `band` in `0..10`, `gain_db` typically `-12.0..=12.0`.
+    /// Set the gain of one EQ band, `band` in `0..=9`, `gain_db` in
+    /// [`EQ_GAIN_DB`].
     ///
     /// The device has no separate "treble" control: the Windows GUI's treble
     /// slider drives the upper EQ bands. See [`Self::set_treble`].
     pub fn set_eq_band(&mut self, band: u8, gain_db: f32) -> Result<()> {
-        let param = proto::GraphicEq::Band0Gain as u32 + u32::from(band.min(9));
+        if band > 9 {
+            return Err(Error::NoSuchBand(band));
+        }
+        let (lo, hi) = EQ_GAIN_DB;
+        check_range(gain_db, lo, hi)?;
+        let param = proto::GraphicEq::Band0Gain as u32 + u32::from(band);
         self.transport
             .set_float(Feature::EffectsGraphicEQ, param, gain_db)
     }
@@ -263,10 +303,65 @@ impl SoundBlasterE5 {
     /// This mirrors what the Creative control panel does -- there is no
     /// dedicated treble parameter in the protocol.
     pub fn set_treble(&mut self, gain_db: f32) -> Result<()> {
+        // Check once up front: this writes four bands, and a gain rejected
+        // on the way through would leave the EQ half-applied.
+        let (lo, hi) = EQ_GAIN_DB;
+        check_range(gain_db, lo, hi)?;
+
         self.set_eq_enabled(true)?;
-        for band in 6..10 {
+        for band in TREBLE_BANDS {
             self.set_eq_band(band, gain_db)?;
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn range_check_accepts_the_endpoints() {
+        assert!(check_range(0.0, 0.0, 1.0).is_ok());
+        assert!(check_range(1.0, 0.0, 1.0).is_ok());
+        let (lo, hi) = EQ_GAIN_DB;
+        assert!(check_range(lo, lo, hi).is_ok());
+        assert!(check_range(hi, lo, hi).is_ok());
+    }
+
+    #[test]
+    fn range_check_rejects_values_past_either_end() {
+        assert!(matches!(
+            check_range(1.5, 0.0, 1.0),
+            Err(Error::OutOfRange { .. })
+        ));
+        assert!(matches!(
+            check_range(-0.001, 0.0, 1.0),
+            Err(Error::OutOfRange { .. })
+        ));
+    }
+
+    /// NaN passes neither comparison, so it must be rejected rather than
+    /// reaching the device as a garbage float.
+    #[test]
+    fn range_check_rejects_nan() {
+        assert!(matches!(
+            check_range(f32::NAN, 0.0, 1.0),
+            Err(Error::OutOfRange { .. })
+        ));
+        assert!(matches!(
+            check_range(f32::INFINITY, 0.0, 1.0),
+            Err(Error::OutOfRange { .. })
+        ));
+    }
+
+    /// The treble shelf drives real bands; if it ever ran past band 9 the
+    /// writes would address whatever id follows the EQ block.
+    #[test]
+    fn treble_bands_are_real_eq_bands() {
+        for band in TREBLE_BANDS {
+            assert!(band <= 9, "treble would write band {band}, past the EQ");
+        }
+        assert_eq!(TREBLE_BANDS.len(), 4);
     }
 }
