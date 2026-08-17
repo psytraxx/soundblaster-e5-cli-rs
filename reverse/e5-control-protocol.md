@@ -321,17 +321,59 @@ fn encode_set_param(param: u8, value: f32) -> [u8; 64] {
 
 ## Open items
 
-- Fill the param-selector table for remaining effects (capture each in isolation).
 - Determine whether `0x26`/`0x23 27` reports are required at init or purely
   cosmetic (send only the `0x20` float, or only `0x23 23`/`0x23 24`, and
   listen).
 - Identify parameter id `0x17` (reads back `80.0`, not normalized `0..1`).
 - Decode the `0x3f`/`0x22`/`0x25` status reads (map to Get* semantics).
-- Cross-check read ids against the write selector table: reads use the **raw**
-  id, writes use `id << 1`. The read data independently confirms the raw-id
-  half of every selector currently marked `Derived` — but not the doubling
-  rule itself, which stays confirmed only for Bass/Surround.
-- Audible A/B (`bass 0.0` vs `bass 1.0`) before dropping "unverified" caveats.
+
+The `id << 1` rule is settled for the implemented table: every effect in it
+was toggled on an E5 and heard to do the right thing. A parameter *outside*
+that table is still unproven, however — the ids below come from the G6
+table and the driver's own property names, not from an E5 capture.
+
+## Unimplemented features (leads)
+
+Surveyed from `enums/ctsndcr_enums.txt`, the stock profiles in
+`profiles/E5/`, and the decompiled driver. Each still needs a capture of
+the Windows panel exercising that control to pin down its selector byte.
+
+Microphone side (CrystalVoice) — the largest gap. Every stock E5 profile
+sets values for all of these, so they are real controls on this hardware
+rather than driver-family leftovers:
+
+| Feature | Evidence |
+|---|---|
+| Mic noise reduction | Shipped `enable="true"` in every profile; driver carries matched `NoiseReductionState`/`NoiseReductionLevel` properties |
+| Mic AEC | `aec` present in every profile |
+| Mic smart volume | `vip_svm` with a real level (`0.74`) |
+| VoiceFX | `voicefx` with a preset index; nine tunable params in the enums |
+| Mic EQ | `mic_eq` with a preset; per-band level/frequency/width |
+
+VoiceFX and Mic EQ *presets* are an index rather than a level, so they may
+not ride the `0x20` float path at all.
+
+Device hardware, plausible but with weaker corroboration:
+
+| Feature | Evidence |
+|---|---|
+| LED control | Driver sets `XoutLedState` at init/mute/active transitions with small ints (1/2/3); meaning of each value unknown |
+| USB power overdrive | Registered by name in the driver's subdevice table, alongside known-real entries |
+| Device I/O config | Line-out/mic config, S/PDIF routing, jack detect, headphone impedance — fits the E5's actual I/O |
+| Direct monitoring | Per-input enables plus `Mic1Level`/`Mic2Level` |
+| Bluetooth auto-connect | One `BluetoothAutoConnect_isEnabled` property in `KSUSBSPI32.dll.c` |
+| Battery | **No** hits in any decompiled binary; likely a companion app or another transport |
+
+Not applicable to the E5 — these belong to other products sharing this
+driver, and the hardware has no path for them: Dolby/DTS decode and encode,
+EAX/EAX3, CMSS3D, reverb, pitch shift, speaker calibration, bass
+management, karaoke, mic-array beamforming.
+
+`FUN_0049179a` in `decompiled/KsUSBaud_x86.sys.c` is the E5's own device
+constructor, selected by a per-PID factory that gives it a 0x3500-byte
+context where sibling products get ~0x2428. The handler table it fills in
+is the best available answer to which features this device really
+implements.
 
 ## Captures
 

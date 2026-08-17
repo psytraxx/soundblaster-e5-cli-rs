@@ -27,7 +27,7 @@ same change that makes the code change, not afterwards.
 **`CHANGELOG.md` is for a non-technical audience.** Write what changed, not
 how — no file paths, struct/function names, byte layouts, crate names, or
 implementation detail. "Bass and surround can now be switched on and off"
-rather than "added `set_bass_enabled`/`selector_with_confidence` to
+rather than "added `set_bass_enabled`/`id_of` to
 `transport.rs`". If an entry needs a code reference to make sense, it
 belongs in the commit message or a doc comment, not here.
 
@@ -54,18 +54,21 @@ The source of truth is `reverse/enums/ctsndcr_enums.txt`, extracted from the
 
 ## The one thing to be careful about
 
-**Only bass is confirmed on real hardware.** The wire format itself —
-opcode, header bytes, big-endian `f32` — comes from a USBPcap capture of
-`KsUSBaud.sys` and is not in question. What's still open is the *selector
-table*: each parameter's one-byte id is derived from the driver's
-`id << 1` rule plus the id table published for the Sound Blaster G6 (same
-vendor and driver family, a different device), not captured from an E5.
-`sbx-e5 selectors` shows which entries are `Captured` versus `Derived`.
+Every effect currently implemented — bass, surround, crystalizer, dialog
+plus, smart volume, the EQ, and the SBX master switch — is confirmed on
+real hardware, in both directions where a read exists. Do not reintroduce
+"unverified"/"derived" caveats for these.
 
-Do not describe a `Derived` selector as confirmed. When a capture resolves
-one, move it to `Captured` in `transport::selector_with_confidence` and say
-so in the changelog. See the README's protocol section and TODO list for
-what's still open (reading device state, SBX master, profile loading).
+That does **not** extend to anything not yet implemented. Only bass and the
+SBX master switch were ever seen in a capture; the rest of the selector
+table follows the driver's `id << 1` rule over the Sound Blaster G6 id
+table and was confirmed by listening. So the rule is well established for
+this device, but a *new* parameter taken from that same table is still a
+guess until it is either captured or verified on hardware. Say which of the
+two happened, and do not describe an untested selector as confirmed.
+
+See the README's TODO for what is still open — profile loading, and the
+microphone-side controls, which are the largest unimplemented area.
 
 ## Testing
 

@@ -10,24 +10,17 @@ a TUI.
 
 ## Status
 
-The wire format was recovered from a USBPcap capture of the Windows driver
-(`KsUSBaud.sys`) — see
-[reverse/e5-control-protocol.md](reverse/e5-control-protocol.md).
+**Every effect here is confirmed working on a real E5** — bass, surround,
+crystalizer, dialog plus, smart volume, the 10-band EQ, and the SBX master
+switch, each verified by ear. Reading the device's current settings back
+works too, so the UI opens showing what the hardware is actually set to.
+
 Control parameters travel as HID `SET_REPORT` writes on the control pipe: a
 64-byte report, a one-byte parameter selector, and a big-endian `f32` value.
-Reads use the same kind of write to pose a query, then collect the answer on
-the interrupt endpoint rather than through `GET_REPORT`.
-
-Confirmed on real hardware: **bass** (`bass 0` vs `bass 1` is audibly
-different), **reading current settings back** from the device, and the
-**SBX master switch** in both directions.
-
-Every other effect's selector is *derived* rather than captured. The driver
-builds the selector byte as `parameter_id << 1`, and the ids come from the
-published table for the Sound Blaster G6 — same vendor and driver family,
-but a different device. Both selectors independently known for the E5, bass
-and surround, fall out of that rule exactly. That is good evidence, not
-proof. Run `sbx-e5 selectors` to see which entries are which.
+Reads pose a query the same way and collect the answer on the interrupt
+endpoint. Full wire documentation is in
+[reverse/e5-control-protocol.md](reverse/e5-control-protocol.md); run
+`sbx-e5 selectors` for the parameter table.
 
 ## Usage
 
@@ -44,7 +37,7 @@ Or drive it a parameter at a time:
 
 ```sh
 sbx-e5 info                    # attached Creative devices + interfaces
-sbx-e5 selectors               # parameter id/selector table + confidence
+sbx-e5 selectors               # parameter id/selector table
 sbx-e5 bass 0.3                # SBX bass strength (Creative default)
 sbx-e5 bass off                # disable without losing the stored level
 sbx-e5 bass 0.3 --crossover 80
@@ -137,48 +130,33 @@ cargo test      # framing/encoding unit tests, no hardware needed
 
 ### Unimplemented features
 
-Candidates found by surveying `reverse/enums/ctsndcr_enums.txt`, Creative's
-stock profiles, and the decompiled driver. None are implemented; each needs
-a USB capture of the Windows panel exercising that control to pin down its
-selector byte, the same way bass and the SBX master switch were resolved.
+Each needs its selector byte pinned down before it can be added. Evidence
+and leads for all of these are in
+[reverse/e5-control-protocol.md](reverse/e5-control-protocol.md).
 
-The microphone side of the device is entirely unimplemented. Creative's own
-E5 profiles configure all six of these, so they are real controls on this
-hardware, not driver-family leftovers:
+The microphone side of the device is entirely unimplemented, and is the
+largest gap — Creative's own E5 profiles configure every one of these:
 
-- **Mic noise reduction** — shipped *enabled* in every stock profile; the
-  driver carries matching `NoiseReductionState`/`NoiseReductionLevel`
-  properties.
-- **Mic echo cancellation (AEC)** — present in every profile.
-- **Mic smart volume** — auto-leveling, profiles carry a real level (`0.74`).
-- **VoiceFX** — voice presets (pitch/formant), nine tunable parameters plus
-  preset slots.
+- **Mic noise reduction** — shipped enabled in every stock profile.
+- **Mic echo cancellation (AEC)**.
+- **Mic smart volume** — auto-leveling.
+- **VoiceFX** — voice presets (pitch/formant), nine tunable parameters.
 - **Mic EQ** — eight-band parametric, per-band level/frequency/width.
 
-Preset selection for VoiceFX and Mic EQ may not use the `0x20` float path —
-an index/enum probably needs a different report shape.
+Preset selection for VoiceFX and Mic EQ may need a different report shape
+than the `0x20` float path, since an index is not a level.
 
-Device-hardware features, plausible but with weaker corroboration:
+Device-hardware features, plausible but less certain:
 
-- **LED control** — on/off, mode, intensity, pulsation. The driver sets an
-  `XoutLedState` at init/mute/active transitions with small integers; what
-  each value does needs checking against the physical LED.
-- **USB power overdrive** — enable plus off/on current limits. Registered as
-  a real subdevice by name in the driver's device table.
+- **LED control** — on/off, mode, intensity, pulsation.
+- **USB power overdrive** — enable plus off/on current limits.
 - **Device I/O configuration** — line-out and mic configuration, S/PDIF
-  routing, jack detection, and headphone impedance selection.
-- **Direct monitoring** — per-input enables with separate mic levels, for
-  zero-latency monitoring.
-- **Bluetooth auto-connect** — one on/off property in the driver.
-- **Battery level and status** — the one feature with no corroboration in
-  any decompiled binary; likely handled by a companion app or a different
-  transport, so treat it as unproven.
+  routing, jack detection, headphone impedance selection.
+- **Direct monitoring** — per-input enables with separate mic levels.
+- **Bluetooth auto-connect**.
+- **Battery level and status** — the least certain of these.
 
 Not worth pursuing: Dolby/DTS decode and encode, EAX/EAX3, CMSS3D, reverb
 and pitch shift, speaker calibration, bass management, karaoke, and mic
 array beamforming. These belong to other Creative products that share this
 driver; the E5 has no hardware path for them.
-
-`FUN_0049179a` in `reverse/decompiled/KsUSBaud_x86.sys.c` is the E5's own
-device constructor, and the handler table it fills in is the best available
-answer to which features this device actually implements.

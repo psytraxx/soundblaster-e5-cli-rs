@@ -13,10 +13,6 @@ use sbx_e5::{SoundBlasterE5, transport};
     long_about = "Control the SBX DSP (bass, treble, surround, crystalizer) of a\n\
                   Creative Sound Blaster E5 on Linux.\n\n\
                   Run with no subcommand to open the interactive UI.\n\n\
-                  The wire format comes from a USB capture of the Windows\n\
-                  driver. Bass is confirmed on hardware; the other selectors\n\
-                  are derived from the driver's `id << 1` rule plus the G6 id\n\
-                  table and are not yet verified on an E5 -- see `selectors`.\n\
                   Use --dry-run to inspect packets without sending them.",
     version
 )]
@@ -299,82 +295,51 @@ fn err(e: sbx_e5::Error) -> anyhow::Error {
 
 /// Run a write that is nice-to-have rather than the point of the command.
 ///
-/// An [`sbx_e5::Error::Unsupported`] here means the capture has not pinned
-/// down that parameter's selector byte; warn and continue so the confirmed
-/// part of the command still lands. Any other error is fatal.
+/// An [`sbx_e5::Error::Unsupported`] here means the parameter has no id in
+/// the table; warn and continue so the rest of the command still lands. Any
+/// other error is fatal.
 fn optional(r: sbx_e5::Result<()>, what: &str) -> Result<()> {
     match r {
         Ok(()) => Ok(()),
         Err(sbx_e5::Error::Unsupported { .. }) => {
-            eprintln!("note: skipping {what} (no captured encoding yet)");
+            eprintln!("note: skipping {what} (no known wire encoding)");
             Ok(())
         }
         Err(e) => Err(err(e)),
     }
 }
 
-/// Print the id/selector table, marking which entries are hardware-proven.
+/// Print the parameter id/selector table.
 fn print_selectors() {
-    use sbx_e5::transport::{Confidence, selector_of};
+    use sbx_e5::transport::selector_of;
 
-    let rows: &[(&str, u8, Confidence)] = &[
-        ("surround enable", id::SURROUND_ENABLE, Confidence::Derived),
-        ("surround level", id::SURROUND_LEVEL, Confidence::Derived),
-        (
-            "dialog+ enable",
-            id::DIALOG_PLUS_ENABLE,
-            Confidence::Derived,
-        ),
-        ("dialog+ level", id::DIALOG_PLUS_LEVEL, Confidence::Derived),
-        (
-            "smart volume enable",
-            id::SMART_VOLUME_ENABLE,
-            Confidence::Derived,
-        ),
-        (
-            "smart volume level",
-            id::SMART_VOLUME_LEVEL,
-            Confidence::Derived,
-        ),
-        (
-            "smart volume mode",
-            id::SMART_VOLUME_MODE,
-            Confidence::Derived,
-        ),
-        (
-            "crystalizer enable",
-            id::CRYSTALIZER_ENABLE,
-            Confidence::Derived,
-        ),
-        (
-            "crystalizer level",
-            id::CRYSTALIZER_LEVEL,
-            Confidence::Derived,
-        ),
-        ("eq enable", id::EQ_ENABLE, Confidence::Derived),
-        ("eq preamp", id::EQ_PREAMP, Confidence::Derived),
-        ("bass enable", id::BASS_ENABLE, Confidence::Derived),
-        ("bass level", id::BASS_LEVEL, Confidence::Captured),
+    let rows: &[(&str, u8)] = &[
+        ("surround enable", id::SURROUND_ENABLE),
+        ("surround level", id::SURROUND_LEVEL),
+        ("dialog+ enable", id::DIALOG_PLUS_ENABLE),
+        ("dialog+ level", id::DIALOG_PLUS_LEVEL),
+        ("smart volume enable", id::SMART_VOLUME_ENABLE),
+        ("smart volume level", id::SMART_VOLUME_LEVEL),
+        ("smart volume mode", id::SMART_VOLUME_MODE),
+        ("crystalizer enable", id::CRYSTALIZER_ENABLE),
+        ("crystalizer level", id::CRYSTALIZER_LEVEL),
+        ("eq enable", id::EQ_ENABLE),
+        ("eq preamp", id::EQ_PREAMP),
+        ("bass enable", id::BASS_ENABLE),
+        ("bass level", id::BASS_LEVEL),
     ];
 
-    println!("  id   sel   confidence  parameter");
-    for (name, id, conf) in rows {
-        let c = match conf {
-            Confidence::Captured => "captured",
-            Confidence::Derived => "derived ",
-        };
-        println!("  0x{id:02x}  0x{:02x}  {c}    {name}", selector_of(*id));
+    println!("  id   sel   parameter");
+    for (name, id) in rows {
+        println!("  0x{id:02x}  0x{:02x}  {name}", selector_of(*id));
     }
     for band in 0..10u8 {
         let id = id::EQ_BAND0 + band;
-        println!(
-            "  0x{id:02x}  0x{:02x}  derived     eq band {band}",
-            selector_of(id)
-        );
+        println!("  0x{id:02x}  0x{:02x}  eq band {band}", selector_of(id));
     }
     println!();
-    println!("captured = seen on the wire from an E5.");
-    println!("derived  = driver's `id << 1` rule + the G6 id table; unverified here.");
+    println!("id  = addresses a read; sel = id << 1, addresses a write.");
+    println!("All entries verified by ear on an E5.");
 }
 
 fn bar(len: u64, what: &str) -> ProgressBar {

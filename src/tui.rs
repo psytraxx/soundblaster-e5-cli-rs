@@ -1,9 +1,6 @@
 //! Interactive terminal UI, shown when the CLI is run with no subcommand.
 //!
-//! Every control maps to one parameter in [`crate::transport::id`]. Rows
-//! carry the same [`Confidence`] the wire table does, so a value that has
-//! never been seen on real hardware is visibly marked rather than presented
-//! as settled.
+//! Every control maps to one parameter in [`crate::transport::id`].
 //!
 //! Writes happen on change, not on exit: moving a slider sends immediately,
 //! which is what makes the UI usable for A/B listening.
@@ -27,7 +24,6 @@ use tui_slider::{Slider, SliderOrientation, SliderState};
 use crate::proto::{
     Crystalizer, DialogPlus, Feature, GraphicEq, SimpleSurround, SmartVolume, XBass,
 };
-use crate::transport::Confidence;
 use crate::{Result, SoundBlasterE5};
 
 /// What a row writes when it changes.
@@ -65,7 +61,6 @@ struct Row {
     bands: [f32; 10],
     /// Which band left/right moves, when `control` is `EqBands`.
     band_cursor: usize,
-    confidence: Confidence,
 }
 
 impl Row {
@@ -134,21 +129,18 @@ impl Row {
 }
 
 /// Build a row with the EQ-only fields defaulted; only `rows()` needs those.
-fn row(label: &'static str, control: Control, value: f32, confidence: Confidence) -> Row {
+fn row(label: &'static str, control: Control, value: f32) -> Row {
     Row {
         label,
         control,
         value,
         bands: [0.0; 10],
         band_cursor: 0,
-        confidence,
     }
 }
 
 /// The rows the UI shows, in display order.
 fn rows() -> Vec<Row> {
-    use Confidence::{Captured, Derived};
-
     /// An enable toggle followed by its level, the pairing every effect uses.
     fn effect(
         name: &'static str,
@@ -157,7 +149,6 @@ fn rows() -> Vec<Row> {
         enable: u32,
         level: u32,
         default: f32,
-        level_conf: Confidence,
     ) -> [Row; 2] {
         [
             row(
@@ -167,7 +158,6 @@ fn rows() -> Vec<Row> {
                     param: enable,
                 },
                 1.0,
-                Confidence::Derived,
             ),
             row(
                 name,
@@ -176,13 +166,12 @@ fn rows() -> Vec<Row> {
                     param: level,
                 },
                 default,
-                level_conf,
             ),
         ]
     }
 
     // Replaced by the real state on startup; see `App::refresh_from_device`.
-    let mut rows = vec![row(SBX_MASTER, Control::Unavailable, 0.0, Captured)];
+    let mut rows = vec![row(SBX_MASTER, Control::Unavailable, 0.0)];
 
     rows.extend(effect(
         "Surround",
@@ -191,7 +180,6 @@ fn rows() -> Vec<Row> {
         SimpleSurround::Enable as u32,
         SimpleSurround::Level as u32,
         0.12,
-        Derived,
     ));
     rows.extend(effect(
         "Crystalizer",
@@ -200,7 +188,6 @@ fn rows() -> Vec<Row> {
         Crystalizer::Enable as u32,
         Crystalizer::Level as u32,
         0.5,
-        Derived,
     ));
     rows.extend(effect(
         "Bass",
@@ -209,7 +196,6 @@ fn rows() -> Vec<Row> {
         XBass::Enable as u32,
         XBass::Strength as u32,
         0.3,
-        Captured,
     ));
     rows.extend(effect(
         "Dialog Plus",
@@ -218,7 +204,6 @@ fn rows() -> Vec<Row> {
         DialogPlus::Enable as u32,
         DialogPlus::Strength as u32,
         0.5,
-        Derived,
     ));
     rows.extend(effect(
         "Smart Volume",
@@ -227,7 +212,6 @@ fn rows() -> Vec<Row> {
         SmartVolume::Enable as u32,
         SmartVolume::Strength as u32,
         0.74,
-        Derived,
     ));
 
     rows.push(row(
@@ -237,10 +221,9 @@ fn rows() -> Vec<Row> {
             param: GraphicEq::Enable as u32,
         },
         0.0,
-        Derived,
     ));
 
-    rows.push(row("EQ bands", Control::EqBands, 0.0, Derived));
+    rows.push(row("EQ bands", Control::EqBands, 0.0));
     rows
 }
 
@@ -355,13 +338,9 @@ impl App {
     }
 
     /// Pull each row's live value from the device, replacing the built-in
-    /// defaults in [`rows`]. Best-effort: a row whose read fails (dry-run,
-    /// no device, or a parameter the `0x26` path doesn't cover -- EQ bands
-    /// and the master switch aren't confirmed at the individual-band level)
-    /// just keeps its default and is left alone.
-    ///
-    /// See `reverse/e5-control-protocol.md`, "Read path", and
-    /// [`crate::transport::Transport::get_float`].
+    /// defaults in [`rows`]. Best-effort: a row whose read fails -- dry-run,
+    /// no device, or the EQ band panel, which has no single value to read --
+    /// keeps its default and is left alone.
     fn refresh_from_device(&mut self, dev: &mut SoundBlasterE5) {
         if dev.is_dry_run() {
             self.status = "dry run: showing defaults, not device state".into();
@@ -605,7 +584,6 @@ fn draw_rows(f: &mut ratatui::Frame, app: &App, area: Rect) {
                 Constraint::Length(16),
                 Constraint::Min(10),
                 Constraint::Length(10),
-                Constraint::Length(3),
             ])
             .split(line);
 
@@ -651,13 +629,5 @@ fn draw_rows(f: &mut ratatui::Frame, app: &App, area: Rect) {
         }
 
         f.render_widget(Paragraph::new(format!("{:>9}", row.display())), cols[2]);
-
-        // Mark values that have never been seen on real hardware.
-        if row.confidence == Confidence::Derived {
-            f.render_widget(
-                Paragraph::new(" ?").style(Style::default().fg(Color::DarkGray)),
-                cols[3],
-            );
-        }
     }
 }

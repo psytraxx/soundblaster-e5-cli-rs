@@ -6,10 +6,8 @@
 //! Volume and the 10-band EQ. Those live behind a vendor protocol addressed
 //! as a `(Feature, param, value)` triple.
 //!
-//! The constants in [`proto`] were recovered from the Windows driver's
-//! `Interop.CtSndCr.dll` type metadata and are exact. The *transport* --
-//! how a triple becomes bytes on the wire -- is the part still being
-//! established; see [`transport`].
+//! [`proto`] holds the addressing constants; [`transport`] turns a triple
+//! into bytes on the wire.
 
 pub mod proto;
 pub mod transport;
@@ -29,8 +27,8 @@ pub enum Error {
     Usb(rusb::Error),
     /// A level argument was outside `0.0..=1.0`.
     OutOfRange(f32),
-    /// The parameter has no wire encoding yet: its selector byte has not been
-    /// observed in a capture, and guessing one could set something else.
+    /// The parameter has no known wire encoding, and guessing a selector
+    /// could set something else entirely.
     Unsupported { feature: Feature, param: u32 },
     /// Terminal I/O failed while running the interactive UI.
     Io(std::io::Error),
@@ -59,7 +57,7 @@ impl std::fmt::Display for Error {
             Error::Unsupported { feature, param } => write!(
                 f,
                 "{feature:?} param {param} has no id in the selector table \
-                 (see `sbx-e5 selectors` and reverse/e5-control-protocol.md)"
+                 (see `sbx-e5 selectors`)"
             ),
             Error::UnexpectedResponse { id } => write!(
                 f,
@@ -131,9 +129,7 @@ impl SoundBlasterE5 {
 
     /// Read any normalized level or boolean by `(feature, param)`.
     ///
-    /// Uses the `0x26` read path (`reverse/e5-control-protocol.md`, "Read
-    /// path"), confirmed against a full panel-open state sync. Booleans ride
-    /// the same float field as `0.0`/`1.0`, same as writes.
+    /// Booleans ride the same float field as `0.0`/`1.0`, same as writes.
     pub fn get_level_raw(&mut self, feature: Feature, param: u32) -> Result<f32> {
         self.transport.get_float(feature, param)
     }
@@ -152,11 +148,11 @@ impl SoundBlasterE5 {
         self.transport.get_sbx_master()
     }
 
-    /// True when `feature`/`param` has a captured wire encoding.
+    /// True when `feature`/`param` has a known wire encoding.
     ///
-    /// The Windows capture only pinned down the value path for bass and
-    /// surround. Callers use this to skip an optional write (an enable
-    /// toggle, say) rather than fail the whole command.
+    /// Callers use this to skip an optional write rather than fail the whole
+    /// command. Parameters outside the id table -- the microphone controls,
+    /// say -- return `false`.
     pub fn supports(&self, feature: Feature, param: u32) -> bool {
         transport::selector(feature, param).is_some()
     }
@@ -164,10 +160,6 @@ impl SoundBlasterE5 {
     // ---- SBX Bass -------------------------------------------------------
 
     /// Enable or disable SBX Bass.
-    ///
-    /// Not captured: the enable toggle's selector byte is unknown, so this
-    /// currently returns [`Error::Unsupported`]. Setting a level with
-    /// [`Self::set_bass`] is the confirmed path.
     pub fn set_bass_enabled(&mut self, on: bool) -> Result<()> {
         self.set_enable(Feature::EffectsXBass, XBass::Enable as u32, on)
     }

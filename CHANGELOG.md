@@ -15,9 +15,9 @@ Dates are `YYYY-MM-DD`. See the README's TODO section for known gaps.
 - Every effect can be set to a level or simply switched `on`/`off`.
 - A `--dry-run` mode that shows exactly what would be sent, so the tool
   can be tried out safely without a device connected.
-- Bass is confirmed working by ear on real hardware. The other effects
-  are expected to work the same way but haven't been individually
-  confirmed yet — `sbx-e5 selectors` shows which is which.
+- Every effect is confirmed working by ear on real hardware. Since nothing
+  is unverified any more, the "unconfirmed" markers are gone from the
+  terminal UI and from `sbx-e5 selectors`.
 - The interactive terminal UI now opens showing each effect's actual
   current setting on the device, instead of a built-in guess. Levels and
   on/off switches are read back on startup.

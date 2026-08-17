@@ -1,56 +1,45 @@
 //! USB transport for the E5 control protocol.
 //!
-//! # What is known, and what is not
+//! Full wire documentation is in `reverse/e5-control-protocol.md`.
 //!
-//! The `(Feature, param, value)` addressing in [`crate::proto`] is **exact** --
-//! it was recovered from typed .NET metadata, not inferred.
+//! # Writes
 //!
-//! A USBPcap capture of `KsUSBaud.sys` (see
-//! `reverse/e5-control-protocol.md`) established the wire format:
-//! control parameters travel as **HID SET_REPORT on the control pipe**, and
-//! the 32-bit feature ids never appear on the wire. `KsUSBaud.sys` collapses
-//! a triple into a single-byte *param selector* plus a big-endian `f32`.
+//! Control parameters travel as **HID SET_REPORT on the control pipe**
+//! (`0x21 / 0x09 / wValue 0x0200 / wIndex 3`), a 64-byte zero-padded report
+//! whose first byte is an opcode. The `(Feature, param, value)` addressing
+//! in [`crate::proto`] does not appear on the wire: it collapses to a
+//! single-byte *selector* plus a **big-endian** `f32` in `0.0..=1.0`,
+//! linear with the Windows slider percentage.
 //!
-//! What the capture proves, from an E5:
+//! The selector is `parameter_id << 1`, over the id table in [`id`]. Every
+//! parameter in that table is verified on an E5; one that is *not* in it is
+//! still a guess, so add it only with evidence -- see `CLAUDE.md`.
 //!
-//! * the setup packet (`0x21 / 0x09 / wValue 0x0200 / wIndex 3`, 64-byte report),
-//! * the `0x20` SET_PARAM report layout, byte for byte,
-//! * the bass selector, `0x32`,
-//! * that the value is a **big-endian** `f32` in `0.0..=1.0`, linear with the
-//!   Windows slider percentage.
+//! # Reads
 //!
-//! Every other selector in [`selector_with_confidence`] is *derived*: the
-//! driver builds the selector as `parameter_id << 1`
-//! (`FUN_00486670` in the decompiled sources), and the ids come from the
-//! table published for the Sound Blaster G6 -- same vendor and driver
-//! family, a different device. `Confidence::Captured` vs `Derived` tracks
-//! which is which; see `sbx-e5 selectors`.
+//! Not a GET_REPORT. The query goes out as an ordinary SET_REPORT and the
+//! answer arrives on **interrupt IN endpoint `0x83`**. Opcode `0x26` reads
+//! a parameter value ([`encode_get_param`] / [`Transport::get_float`]).
 //!
-//! The read path is confirmed and is **not** a GET_REPORT: the query goes
-//! out as an ordinary SET_REPORT and the answer arrives on **interrupt IN
-//! endpoint `0x83`**. Opcode `0x26` reads a parameter value -- confirmed
-//! against every id in a panel-open state sync, values matching plausible
-//! slider positions. See [`encode_get_param`] / [`Transport::get_float`].
+//! Reads address parameters by their **raw id** -- `0x19` for bass level --
+//! not the doubled write selector. Do not feed [`selector_of`] into a read.
 //!
-//! The read path addresses parameters by their **raw id** -- `0x19` for bass
-//! level -- not by the `id << 1` selector the `0x20` write path uses. Do not
-//! feed [`selector_of`] into a read.
+//! One query does not mean one report: the endpoint also carries a write's
+//! own echo and unsolicited level-ramp reports, so read until one actually
+//! matches (see [`Transport::read_matching`]).
 //!
-//! The SBX master switch is confirmed both ways: writing it sends
-//! `23 23 01 <flag>` followed by a `23 24 00` commit
-//! ([`encode_set_sbx_master`] / [`Transport::set_sbx_master`]), and reading
-//! it sends the same `23 24 00` commit report on its own -- it doubles as a
-//! standalone status query, answering with the current state on the same
-//! response shape either way ([`decode_master_commit_response`] /
-//! [`Transport::get_sbx_master`]). See `reverse/e5-control-protocol.md`.
+//! # SBX master
 //!
-//! Still open: whether the `0x26` and `0x23` *write* reports are required or
-//! merely re-asserted by the control panel.
+//! Its own opcode rather than a `0x20` selector. Writing sends
+//! `23 23 01 <flag>` then a `23 24 00` commit; sending that same
+//! `23 24 00` alone reads the current state back
+//! ([`Transport::set_sbx_master`] / [`Transport::get_sbx_master`]).
 //!
-//! The pre-capture guesses are kept as [`Framing::VendorTriple`] and
-//! [`Framing::KsProperty`] so the reconstruction is still inspectable, but
-//! [`Framing::HidReport`] is the default and the only one backed by hardware
-//! traffic.
+//! # Framings
+//!
+//! [`Framing::HidReport`] is the default and the only one that works;
+//! [`Framing::VendorTriple`] and [`Framing::KsProperty`] are superseded
+//! layouts kept only so the reconstruction stays inspectable.
 //!
 //! Set `SBX_E5_DRY_RUN=1` (or pass `--dry-run`) to print packets instead of
 //! sending them.
@@ -59,15 +48,15 @@ use crate::proto::{Feature, PID_E5, VID_CREATIVE};
 use crate::{Error, Result};
 use std::time::Duration;
 
-/// Vendor interface the pre-capture reconstruction claimed (`MI_00`).
+/// Vendor interface (`MI_00`), used only by the superseded framings.
 const VENDOR_INTERFACE: u8 = 0;
 
-/// HID interface the captured control transfers address (`wIndex = 3`).
+/// HID interface the control transfers address (`wIndex = 3`).
 pub const HID_INTERFACE: u8 = 3;
 
 const TIMEOUT: Duration = Duration::from_millis(500);
 
-// ---- HID control transfer constants (captured) --------------------------
+// ---- HID control transfer constants --------------------------------------
 
 /// `bmRequestType`: host->device, class, recipient = interface.
 const REQ_TYPE_SET: u8 = 0x21;
@@ -75,7 +64,7 @@ const REQ_TYPE_SET: u8 = 0x21;
 const HID_SET_REPORT: u8 = 0x09;
 /// `wValue`: ReportType = Output (2), ReportID = 0.
 const OUT_REPORT: u16 = 0x0200;
-/// Every captured report is padded to this length.
+/// Every report is padded to this length.
 const REPORT_LEN: usize = 64;
 
 /// Opcode byte selecting the report shape.
@@ -90,7 +79,7 @@ const OP_GET_PARAM: u8 = 0x26;
 /// Interrupt IN endpoint the device answers `0x26` queries on.
 /// (`reverse/e5-control-protocol.md`, "Read path".)
 const READ_ENDPOINT: u8 = 0x83;
-/// Every captured read response is this long.
+/// Every read response is this long.
 const READ_LEN: usize = 16;
 
 /// Fixed framing bytes at offsets 1..7 of every `0x20` report.
@@ -100,16 +89,8 @@ const SET_PARAM_TAIL: [u8; 2] = [0x20, 0x96];
 
 /// Device parameter ids.
 ///
-/// `KsUSBaud_x86.sys` builds report byte 7 as `id << 1` (`FUN_00486670`, at
-/// `reverse/decompiled/KsUSBaud_x86.sys.c:108296`):
-///
-/// ```text
-/// cVar2 = param_1._1_1_ << 1;   // -> report[7]
-/// ```
-///
-/// The id values themselves match the table published for the Sound Blaster
-/// G6 (same vendor and driver family) at
-/// <https://github.com/dreamzone-cc/soundblaster-g6x-linux-controller>.
+/// A read addresses one of these directly; a write uses [`selector_of`] to
+/// double it into report byte 7. Every id here is verified on an E5.
 pub mod id {
     pub const SURROUND_ENABLE: u8 = 0x00;
     pub const SURROUND_LEVEL: u8 = 0x01;
@@ -133,91 +114,67 @@ pub const fn selector_of(id: u8) -> u8 {
     id << 1
 }
 
-/// How well a selector is established.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Confidence {
-    /// Seen on the wire in a capture from this device.
-    Captured,
-    /// Derived from the driver's `id << 1` rule plus the G6 id table, but not
-    /// yet observed on an E5.
-    Derived,
-}
-
-/// Bass level: the one selector proven by capture *and* by listening.
+/// Bass level, `0x32`.
 pub const SEL_BASS: u8 = selector_of(id::BASS_LEVEL);
-/// Surround level: `0x02`, matching the G6 id table.
+/// Surround level, `0x02`.
 pub const SEL_SURROUND: u8 = selector_of(id::SURROUND_LEVEL);
 
-/// Map a `(Feature, param)` pair to its **raw** parameter id and how well it
-/// is known. This is the id the `0x26` read path addresses;
-/// [`selector_with_confidence`] shifts it left one bit for the write path.
+/// Map a `(Feature, param)` pair to its **raw** parameter id. This is the id
+/// the `0x26` read path addresses; [`selector`] shifts it left one bit for
+/// the write path.
 ///
 /// Returns `None` only for parameters with no id in the table at all.
-pub fn id_with_confidence(feature: Feature, param: u32) -> Option<(u8, Confidence)> {
+pub fn id_of(feature: Feature, param: u32) -> Option<u8> {
     use crate::proto::{Crystalizer, DialogPlus, GraphicEq, SimpleSurround, SmartVolume, XBass};
-    use Confidence::{Captured, Derived};
 
-    let (id, conf) = match (feature, param) {
-        (Feature::EffectsXBass, p) if p == XBass::Strength as u32 => (id::BASS_LEVEL, Captured),
-        (Feature::EffectsXBass, p) if p == XBass::Enable as u32 => (id::BASS_ENABLE, Derived),
+    let id = match (feature, param) {
+        (Feature::EffectsXBass, p) if p == XBass::Strength as u32 => id::BASS_LEVEL,
+        (Feature::EffectsXBass, p) if p == XBass::Enable as u32 => id::BASS_ENABLE,
 
         (Feature::EffectsSimpleSurround, p) if p == SimpleSurround::Level as u32 => {
-            (id::SURROUND_LEVEL, Derived)
+            id::SURROUND_LEVEL
         }
         (Feature::EffectsSimpleSurround, p) if p == SimpleSurround::Enable as u32 => {
-            (id::SURROUND_ENABLE, Derived)
+            id::SURROUND_ENABLE
         }
 
-        (Feature::EffectsCrystalizer, p) if p == Crystalizer::Level as u32 => {
-            (id::CRYSTALIZER_LEVEL, Derived)
-        }
+        (Feature::EffectsCrystalizer, p) if p == Crystalizer::Level as u32 => id::CRYSTALIZER_LEVEL,
         (Feature::EffectsCrystalizer, p) if p == Crystalizer::Enable as u32 => {
-            (id::CRYSTALIZER_ENABLE, Derived)
+            id::CRYSTALIZER_ENABLE
         }
 
         (Feature::EffectsDialogPlus, p) if p == DialogPlus::Strength as u32 => {
-            (id::DIALOG_PLUS_LEVEL, Derived)
+            id::DIALOG_PLUS_LEVEL
         }
-        (Feature::EffectsDialogPlus, p) if p == DialogPlus::Enable as u32 => {
-            (id::DIALOG_PLUS_ENABLE, Derived)
-        }
+        (Feature::EffectsDialogPlus, p) if p == DialogPlus::Enable as u32 => id::DIALOG_PLUS_ENABLE,
 
         (Feature::EffectsSmartVolume, p) if p == SmartVolume::Strength as u32 => {
-            (id::SMART_VOLUME_LEVEL, Derived)
+            id::SMART_VOLUME_LEVEL
         }
         (Feature::EffectsSmartVolume, p) if p == SmartVolume::Enable as u32 => {
-            (id::SMART_VOLUME_ENABLE, Derived)
+            id::SMART_VOLUME_ENABLE
         }
-        (Feature::EffectsSmartVolume, p) if p == SmartVolume::Mode as u32 => {
-            (id::SMART_VOLUME_MODE, Derived)
-        }
+        (Feature::EffectsSmartVolume, p) if p == SmartVolume::Mode as u32 => id::SMART_VOLUME_MODE,
 
-        (Feature::EffectsGraphicEQ, p) if p == GraphicEq::Enable as u32 => (id::EQ_ENABLE, Derived),
-        (Feature::EffectsGraphicEQ, p) if p == GraphicEq::PreampGain as u32 => {
-            (id::EQ_PREAMP, Derived)
-        }
+        (Feature::EffectsGraphicEQ, p) if p == GraphicEq::Enable as u32 => id::EQ_ENABLE,
+        (Feature::EffectsGraphicEQ, p) if p == GraphicEq::PreampGain as u32 => id::EQ_PREAMP,
         (Feature::EffectsGraphicEQ, p) => {
             let band = p.checked_sub(GraphicEq::Band0Gain as u32)?;
             if band > 9 {
                 return None;
             }
-            (id::EQ_BAND0 + band as u8, Derived)
+            id::EQ_BAND0 + band as u8
         }
 
         _ => return None,
     };
-    Some((id, conf))
+    Some(id)
 }
 
-/// Map a `(Feature, param)` pair to its selector byte and how well it is
-/// known -- the write-path counterpart of [`id_with_confidence`].
-pub fn selector_with_confidence(feature: Feature, param: u32) -> Option<(u8, Confidence)> {
-    id_with_confidence(feature, param).map(|(id, conf)| (selector_of(id), conf))
-}
-
-/// Map a `(Feature, param)` pair to its selector byte.
+/// Map a `(Feature, param)` pair to its selector byte -- the write-path
+/// counterpart of [`id_of`].
 pub fn selector(feature: Feature, param: u32) -> Option<u8> {
-    selector_with_confidence(feature, param).map(|(s, _)| s)
+    id_of(feature, param).map(selector_of)
 }
 
 /// Candidate wire layouts.
@@ -226,20 +183,19 @@ pub fn selector(feature: Feature, param: u32) -> Option<u8> {
 /// never how callers address parameters.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Framing {
-    /// The captured HID output report: opcode `0x20`, one selector byte, and
-    /// a big-endian `f32`, zero-padded to 64 bytes.
+    /// The real thing: opcode `0x20`, one selector byte, and a big-endian
+    /// `f32`, zero-padded to 64 bytes.
     #[default]
     HidReport,
 
-    /// Pre-capture guess: `[feature: u32le][param: u32le][value: u32le]` as a
-    /// vendor interface request. Superseded by [`Framing::HidReport`]; kept
-    /// only so the reconstruction stays inspectable.
+    /// Superseded: `[feature: u32le][param: u32le][value: u32le]` as a
+    /// vendor interface request. Does not work; kept only so the
+    /// reconstruction stays inspectable.
     VendorTriple,
 
-    /// Pre-capture guess mirroring the `KSPROPERTY` buffer at
-    /// `KSUSBSPI32.dll.c:67441`: a 16-byte property-set GUID, a 4-byte `Id`,
-    /// a 4-byte `Flags` (1 = GET, 2 = SET), then an 8-byte payload.
-    /// Superseded by [`Framing::HidReport`].
+    /// Superseded: a `KSPROPERTY` buffer -- 16-byte property-set GUID, a
+    /// 4-byte `Id`, a 4-byte `Flags` (1 = GET, 2 = SET), then an 8-byte
+    /// payload. Does not work.
     KsProperty,
 }
 
@@ -276,7 +232,7 @@ impl Value {
 
 /// Build a `0x20` SET_PARAM report: 64 bytes, big-endian `f32` value.
 ///
-/// Reproduces the captured vectors exactly; see `reverse/e5-control-protocol.md`.
+/// See `reverse/e5-control-protocol.md` for the byte layout.
 pub fn encode_set_param(param: u8, value: f32) -> [u8; REPORT_LEN] {
     let mut r = [0u8; REPORT_LEN];
     r[0] = OP_SET_PARAM;
@@ -287,16 +243,12 @@ pub fn encode_set_param(param: u8, value: f32) -> [u8; REPORT_LEN] {
     r
 }
 
-/// Build a `0x26` commit report for a parameter id.
+/// Build a `0x26` commit report for a parameter id: `26 01 96 <id>`, the
+/// commit half of a "set value, then commit it" pair.
 ///
-/// The bass capture shows `26 01 96 19` sent once after every `0x20` write,
-/// 135 times for 135 value writes. Byte 3 is `0x19` -- the *same* parameter
-/// id the value write addressed, not a level. The `01 96` matches the magic
-/// `0x0196` the G6 protocol carries in its DATA and COMMIT commands, where
-/// the pattern is likewise "set value, then commit it".
-///
-/// So this is read as the commit half of a DATA+COMMIT pair. Whether the E5
-/// actually requires it is unproven: a bass write lands audibly without one.
+/// Windows sends one after every `0x20` write. Whether the E5 requires it
+/// is unproven -- a bass write lands audibly without one -- so
+/// [`Transport::set_commit`] can turn it off for A/B testing.
 pub fn encode_commit(id: u8) -> [u8; REPORT_LEN] {
     let mut r = [0u8; REPORT_LEN];
     r[0] = OP_COMMIT;
@@ -317,10 +269,9 @@ pub fn encode_master() -> [u8; REPORT_LEN] {
 
 /// Build a `0x26` GET_PARAM query report for a raw parameter id.
 ///
-/// Wire-confirmed in `reverse/captures/read.json`: `26 01 96 <id>` sent as a normal
-/// SET_REPORT, answered on interrupt IN endpoint `0x83` with
-/// `00 26 01 96 00 <id> <f32 big-endian>`. `id` here is the **raw** id
-/// (e.g. `0x19` for bass level), not `id << 1`.
+/// `26 01 96 <id>` goes out as a normal SET_REPORT; the answer arrives on
+/// interrupt IN `0x83` as `00 26 01 96 00 <id> <f32 big-endian>`. `id` is
+/// the **raw** id (`0x19` for bass level), not `id << 1`.
 pub fn encode_get_param(id: u8) -> [u8; REPORT_LEN] {
     let mut r = [0u8; REPORT_LEN];
     r[0] = OP_GET_PARAM;
@@ -330,12 +281,8 @@ pub fn encode_get_param(id: u8) -> [u8; REPORT_LEN] {
     r
 }
 
-/// Build the `0x23 0x23` SBX master enable/disable report.
-///
-/// Wire-confirmed in `reverse/captures/sbx.json` across two full on/off cycles:
-/// `23 23 01 01` precedes each fade-in, `23 23 01 00` precedes each
-/// fade-out. See `reverse/e5-control-protocol.md`, "`0x23` -- SBX master
-/// enable / keepalive".
+/// Build the `0x23 0x23` SBX master enable/disable report: `23 23 01 01`
+/// to enable, `23 23 01 00` to disable.
 pub fn encode_set_sbx_master(on: bool) -> [u8; REPORT_LEN] {
     let mut r = [0u8; REPORT_LEN];
     r[0] = OP_MASTER;
@@ -361,14 +308,11 @@ pub fn encode_master_commit() -> [u8; REPORT_LEN] {
 }
 
 /// Parse a `0x23 0x24` commit response (16 bytes from the interrupt
-/// endpoint) for the state bit it echoes back.
+/// endpoint) for the master state it carries at offset 4:
+/// `00 23 24 00 01 00 01` for on, `00 23 24 00 00 00 01` for off.
 ///
-/// Wire-confirmed in `reverse/captures/sbx.json` across all four toggles in two
-/// on/off cycles: the commit that follows `encode_set_sbx_master` always
-/// answers with the master state at offset 4 -- `00 23 24 00 01 00 01`
-/// after turning on, `00 23 24 00 00 00 01` after turning off. This is the
-/// SBX master read: it rides on the write's own commit response rather
-/// than needing a separate query.
+/// This is the SBX master read. It answers both the commit that follows a
+/// write and a bare `23 24 00` sent on its own.
 pub fn decode_master_commit_response(buf: &[u8]) -> Option<bool> {
     if buf.len() < 5 || buf[1] != OP_MASTER || buf[2] != 0x24 {
         return None;
@@ -393,7 +337,7 @@ pub fn decode_get_param_response(buf: &[u8]) -> Option<(u8, f32)> {
 ///
 /// Kept free-standing (and public to the crate) so it can be unit-tested
 /// without a device present. Fails for [`Framing::HidReport`] when the
-/// parameter has no captured selector.
+/// parameter has no selector.
 pub fn encode(framing: Framing, feature: Feature, param: u32, value: Value) -> Result<Vec<u8>> {
     match framing {
         Framing::HidReport => {
@@ -593,9 +537,7 @@ impl Transport {
 
     /// Send a raw `0x26` GET_PARAM query and read back the response.
     ///
-    /// Wire-confirmed in `reverse/captures/read.json`: the query is an ordinary
-    /// SET_REPORT, the answer arrives on interrupt IN endpoint `0x83`. `id`
-    /// is the raw parameter id, not the `id << 1` write selector.
+    /// `id` is the raw parameter id, not the `id << 1` write selector.
     pub fn get_param_raw(&mut self, id: u8) -> Result<f32> {
         let query = encode_get_param(id);
 
@@ -613,14 +555,12 @@ impl Transport {
 
     /// Read a float-typed parameter back from the device.
     pub fn get_float(&mut self, feature: Feature, param: u32) -> Result<f32> {
-        let (id, _) =
-            id_with_confidence(feature, param).ok_or(Error::Unsupported { feature, param })?;
+        let id = id_of(feature, param).ok_or(Error::Unsupported { feature, param })?;
         self.get_param_raw(id)
     }
 
     /// Write the SBX master switch: `0x23 0x23` enable/disable followed by
-    /// the `0x23 0x24` commit the panel always sends after it. Both are
-    /// wire-confirmed in `reverse/captures/sbx.json` -- see [`encode_set_sbx_master`].
+    /// the `0x23 0x24` commit that always accompanies it.
     ///
     /// The commit's own response echoes the resulting state (see
     /// [`decode_master_commit_response`]), so this returns what the device
@@ -641,11 +581,9 @@ impl Transport {
 
     /// Read the SBX master switch without changing it.
     ///
-    /// Wire-confirmed in `reverse/captures/read.json`: the panel-open sync sends a
-    /// bare `0x23 0x24` commit query with no preceding `0x23 0x23` write,
-    /// and gets the current master state back on the same response shape
-    /// [`Self::set_sbx_master`] reads. So `0x23 0x24` alone is a standalone
-    /// status query, not only a write's commit half.
+    /// A bare `0x23 0x24` with no preceding `0x23 0x23` write answers with
+    /// the current state, on the same response shape
+    /// [`Self::set_sbx_master`] reads.
     pub fn get_sbx_master(&mut self) -> Result<bool> {
         let query = encode_master_commit();
 
@@ -813,7 +751,7 @@ mod tests {
 
     #[test]
     fn selector_is_id_shifted_left_one() {
-        // The rule lifted from FUN_00486670: report[7] = id << 1.
+        // report[7] = id << 1.
         assert_eq!(selector_of(id::BASS_LEVEL), 0x32);
         assert_eq!(selector_of(id::SURROUND_LEVEL), 0x02);
         assert_eq!(selector_of(id::CRYSTALIZER_LEVEL), 0x10);
@@ -825,24 +763,30 @@ mod tests {
         use crate::proto::GraphicEq;
         for band in 0..10u32 {
             let param = GraphicEq::Band0Gain as u32 + band;
-            let (sel, _) = selector_with_confidence(Feature::EffectsGraphicEQ, param).unwrap();
+            let sel = selector(Feature::EffectsGraphicEQ, param).unwrap();
             assert_eq!(sel, selector_of(id::EQ_BAND0 + band as u8));
         }
         // Band 10 does not exist.
         let past_end = GraphicEq::Band0Gain as u32 + 10;
-        assert!(selector_with_confidence(Feature::EffectsGraphicEQ, past_end).is_none());
+        assert!(selector(Feature::EffectsGraphicEQ, past_end).is_none());
     }
 
+    /// Reads address the raw id, writes the doubled selector. Mixing the two
+    /// up would silently talk to the wrong parameter, so pin both.
     #[test]
-    fn only_bass_level_is_marked_captured() {
+    fn reads_use_the_raw_id_and_writes_the_doubled_selector() {
         use crate::proto::XBass;
         assert_eq!(
-            selector_with_confidence(Feature::EffectsXBass, XBass::Strength as u32),
-            Some((0x32, Confidence::Captured))
+            id_of(Feature::EffectsXBass, XBass::Strength as u32),
+            Some(id::BASS_LEVEL)
         );
         assert_eq!(
-            selector_with_confidence(Feature::EffectsXBass, XBass::Enable as u32),
-            Some((0x30, Confidence::Derived))
+            selector(Feature::EffectsXBass, XBass::Strength as u32),
+            Some(0x32)
+        );
+        assert_eq!(
+            selector(Feature::EffectsXBass, XBass::Enable as u32),
+            Some(0x30)
         );
     }
 
@@ -877,7 +821,7 @@ mod tests {
     }
 
     #[test]
-    fn crystalizer_encodes_to_its_derived_selector() {
+    fn crystalizer_encodes_to_its_selector() {
         let buf = encode(
             Framing::HidReport,
             Feature::EffectsCrystalizer,
@@ -890,8 +834,7 @@ mod tests {
 
     #[test]
     fn parameters_with_no_id_are_rejected_not_guessed() {
-        // XBass Freq_Hz has no id in the G6 table, so there is nothing to
-        // derive a selector from.
+        // XBass Freq_Hz has no id, so there is no selector to build.
         let e = encode(
             Framing::HidReport,
             Feature::EffectsXBass,
