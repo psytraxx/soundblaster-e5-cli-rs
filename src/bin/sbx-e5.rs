@@ -282,8 +282,15 @@ fn main() -> Result<()> {
 
         Command::Sbx { state } => {
             let on = state == "on";
-            dev.set_sbx_master(on).map_err(err)?;
-            println!("sbx = {state}");
+            let got = dev.set_sbx_master_guess(on).map_err(err)?;
+            if got == on {
+                println!("sbx = {state}  (write opcode unconfirmed -- device agrees on read-back)");
+            } else {
+                println!(
+                    "sbx: sent {state}, but read-back is {} -- guessed opcode likely did nothing",
+                    if got { "on" } else { "off" }
+                );
+            }
         }
 
         Command::Selectors => unreachable!("handled above"),

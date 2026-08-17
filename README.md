@@ -126,14 +126,14 @@ cargo test      # framing/encoding unit tests, no hardware needed
 
 ## TODO
 
-- **Read current values from the device.** There is no confirmed
-  `GET_REPORT` round trip yet, so the TUI opens with Creative's stock
-  defaults rather than the device's actual state, and a value set outside
-  this tool (or before it was last run) won't show up until touched.
-- **SBX master switch.** `sbx on`/`off` returns `Unsupported` — the master
-  toggle doesn't travel as a `0x20` parameter write like everything else,
-  so it has no selector to derive. Needs a capture of the SBX master button
-  in isolation.
+- **SBX master switch read + write.** `sbx on`/`off` and the TUI's SBX
+  master row send a guessed `0x25`-based write and read — confirmed on real
+  hardware (2026-08-17) to not work: the write doesn't stick and the read
+  doesn't reflect the actual switch. The master toggle doesn't travel as a
+  `0x20` parameter write like everything else, so there's no selector to
+  derive; needs a fresh capture bracketing an actual button click. See
+  `reverse/e5-control-protocol.md`, "Capturing the SBX master toggle", for
+  the exact steps.
 - **Profile loading.** Creative ships several stock profiles (see
   `reverse/profiles/E5/Default.xml`); there is no way yet to load one as a
   single operation instead of setting each parameter by hand.

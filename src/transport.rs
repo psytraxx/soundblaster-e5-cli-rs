@@ -26,9 +26,32 @@
 //! family, a different device. `Confidence::Captured` vs `Derived` tracks
 //! which is which; see `sbx-e5 selectors`.
 //!
-//! Still open: whether the `0x26` and `0x23` reports are required or merely
-//! re-asserted by the control panel, and the GET_REPORT read path (there is
-//! no confirmed way to read a parameter back from the device).
+//! A second capture (`reverse/read.json`, a control-panel state sync)
+//! resolved the read path. It is **not** a GET_REPORT: the query goes out as
+//! an ordinary SET_REPORT and the answer arrives on **interrupt IN endpoint
+//! `0x83`**. Opcode `0x26` reads a parameter value -- confirmed against
+//! every id in the panel-open sync, values matching plausible slider
+//! positions. See [`encode_get_param`] / [`Transport::get_float`].
+//!
+//! Opcode `0x25` returns a single status bit with the same response shape,
+//! and is *believed* to be the SBX master switch -- but this is
+//! `Confidence::Derived`, not `Captured`: the capture shows two different
+//! sub-queries returning different bits within one poll batch, never a
+//! before/after around an actual button toggle. See
+//! [`encode_get_status`] / [`Transport::get_sbx_master`].
+//!
+//! The read path addresses parameters by their **raw id** -- `0x19` for bass
+//! level -- not by the `id << 1` selector the `0x20` write path uses. Do not
+//! feed [`selector_of`] into a read.
+//!
+//! Still open: whether the `0x26` and `0x23` *write* reports are required or
+//! merely re-asserted by the control panel, and the SBX master **write**
+//! path -- the Windows control panel clearly has one (the toggle works
+//! there), it just hasn't shown up in a capture yet. A guessed write is
+//! wired up as [`encode_set_sbx_master_guess`] /
+//! [`crate::SoundBlasterE5::set_sbx_master_guess`], extrapolated from the
+//! confirmed read shape rather than captured -- treat any success as
+//! circumstantial.
 //!
 //! The pre-capture guesses are kept as [`Framing::VendorTriple`] and
 //! [`Framing::KsProperty`] so the reconstruction is still inspectable, but
@@ -65,6 +88,18 @@ const REPORT_LEN: usize = 64;
 const OP_SET_PARAM: u8 = 0x20;
 const OP_COMMIT: u8 = 0x26;
 const OP_MASTER: u8 = 0x23;
+/// `0x26` doubles as GET_PARAM when byte 3 carries a raw id with no value
+/// bytes following -- same opcode as [`OP_COMMIT`], distinguished by the
+/// response coming back on the interrupt IN endpoint.
+const OP_GET_PARAM: u8 = 0x26;
+/// SBX master on/off query.
+const OP_GET_SBX_MASTER: u8 = 0x25;
+
+/// Interrupt IN endpoint the device answers `0x26`/`0x25` queries on.
+/// (`reverse/e5-control-protocol.md`, "Read path".)
+const READ_ENDPOINT: u8 = 0x83;
+/// Every captured read response is this long.
+const READ_LEN: usize = 16;
 
 /// Fixed framing bytes at offsets 1..7 of every `0x20` report.
 const SET_PARAM_HDR: [u8; 6] = [0x00, 0x16, 0x0a, 0xd5, 0x02, 0x08];
@@ -121,10 +156,12 @@ pub const SEL_BASS: u8 = selector_of(id::BASS_LEVEL);
 /// Surround level: `0x02`, matching the G6 id table.
 pub const SEL_SURROUND: u8 = selector_of(id::SURROUND_LEVEL);
 
-/// Map a `(Feature, param)` pair to its selector byte and how well it is known.
+/// Map a `(Feature, param)` pair to its **raw** parameter id and how well it
+/// is known. This is the id the read path (`0x26`/`0x25`) addresses;
+/// [`selector_with_confidence`] shifts it left one bit for the write path.
 ///
 /// Returns `None` only for parameters with no id in the table at all.
-pub fn selector_with_confidence(feature: Feature, param: u32) -> Option<(u8, Confidence)> {
+pub fn id_with_confidence(feature: Feature, param: u32) -> Option<(u8, Confidence)> {
     use crate::proto::{Crystalizer, DialogPlus, GraphicEq, SimpleSurround, SmartVolume, XBass};
     use Confidence::{Captured, Derived};
 
@@ -177,7 +214,13 @@ pub fn selector_with_confidence(feature: Feature, param: u32) -> Option<(u8, Con
 
         _ => return None,
     };
-    Some((selector_of(id), conf))
+    Some((id, conf))
+}
+
+/// Map a `(Feature, param)` pair to its selector byte and how well it is
+/// known -- the write-path counterpart of [`id_with_confidence`].
+pub fn selector_with_confidence(feature: Feature, param: u32) -> Option<(u8, Confidence)> {
+    id_with_confidence(feature, param).map(|(id, conf)| (selector_of(id), conf))
 }
 
 /// Map a `(Feature, param)` pair to its selector byte.
@@ -209,12 +252,10 @@ pub enum Framing {
 }
 
 /// `KSPROPERTY.Flags` values used by the Windows stack.
-const KS_FLAG_GET: u32 = 1;
 const KS_FLAG_SET: u32 = 2;
 
-/// Vendor request codes for the superseded [`Framing::VendorTriple`] path.
+/// Vendor request code for the superseded [`Framing::VendorTriple`] path.
 const REQ_SET_PARAM: u8 = 0x03;
-const REQ_GET_PARAM: u8 = 0x04;
 
 /// How a parameter value is encoded on the wire.
 #[derive(Debug, Clone, Copy)]
@@ -280,6 +321,89 @@ pub fn encode_master() -> [u8; REPORT_LEN] {
     r[1] = 0x27;
     r[2] = 0x01;
     r
+}
+
+/// Build a `0x26` GET_PARAM query report for a raw parameter id.
+///
+/// Wire-confirmed in `reverse/read.json`: `26 01 96 <id>` sent as a normal
+/// SET_REPORT, answered on interrupt IN endpoint `0x83` with
+/// `00 26 01 96 00 <id> <f32 big-endian>`. `id` here is the **raw** id
+/// (e.g. `0x19` for bass level), not `id << 1`.
+pub fn encode_get_param(id: u8) -> [u8; REPORT_LEN] {
+    let mut r = [0u8; REPORT_LEN];
+    r[0] = OP_GET_PARAM;
+    r[1] = 0x01;
+    r[2] = 0x96;
+    r[3] = id;
+    r
+}
+
+/// Build a `0x25` status query report.
+///
+/// Response shape is wire-confirmed in `reverse/read.json`: `25 01 <sub>`
+/// answered on interrupt IN endpoint `0x83` with `00 25 01 00 <state> 01
+/// ...`, a single boolean-looking state byte. **What the state means is not
+/// confirmed** -- two different `sub` values were seen back-to-back in one
+/// panel-open poll, each returning a different bit, but never captured
+/// before/after an actual SBX-button toggle. Treated as `Confidence::Derived`
+/// for "this is the SBX master," not `Captured`; see
+/// `reverse/e5-control-protocol.md`.
+///
+/// `sub = 0x01` is the value seen in the capture; kept as a parameter in
+/// case the two observed sub-queries turn out to address different things.
+pub fn encode_get_status(sub: u8) -> [u8; REPORT_LEN] {
+    let mut r = [0u8; REPORT_LEN];
+    r[0] = OP_GET_SBX_MASTER;
+    r[1] = 0x01;
+    r[2] = sub;
+    r
+}
+
+/// Build a **guessed** `0x25` SBX master write report.
+///
+/// **Not wire-confirmed. No capture has ever shown a SET for this switch --**
+/// the Windows control panel clearly has a working write path (the button
+/// works there), it just hasn't shown up in a capture yet. This shape is
+/// extrapolated from the confirmed `0x25 01 <sub>` *read* query
+/// ([`encode_get_status`]) by analogy with how `0x26` carries its selector
+/// and payload in the same positions for both GET and (per the G6 DATA/
+/// COMMIT pattern `encode_commit` documents) SET: opcode, echo byte, then
+/// sub-selector, with the value appended where the read's echoed state sits.
+///
+/// Treat any success as circumstantial until a capture confirms it byte for
+/// byte -- see `reverse/e5-control-protocol.md`.
+pub fn encode_set_sbx_master_guess(on: bool) -> [u8; REPORT_LEN] {
+    let mut r = [0u8; REPORT_LEN];
+    r[0] = OP_GET_SBX_MASTER;
+    r[1] = 0x01;
+    r[2] = 0x01;
+    r[3] = u8::from(on);
+    r
+}
+
+/// Parse a `0x26` GET_PARAM response (16 bytes from the interrupt endpoint).
+///
+/// Returns `(id, value)`, or `None` if the response doesn't echo the
+/// GET_PARAM opcode shape.
+pub fn decode_get_param_response(buf: &[u8]) -> Option<(u8, f32)> {
+    if buf.len() < 10 || buf[1] != OP_GET_PARAM || buf[2] != 0x01 {
+        return None;
+    }
+    let id = buf[5];
+    let value = f32::from_be_bytes(buf[6..10].try_into().ok()?);
+    Some((id, value))
+}
+
+/// Parse a `0x25` status response (16 bytes from the interrupt endpoint).
+///
+/// Returns the state bit at offset 4, or `None` if the response doesn't
+/// echo the `0x25` opcode shape. See [`encode_get_status`] for the caveat
+/// on what this bit means.
+pub fn decode_get_status_response(buf: &[u8]) -> Option<bool> {
+    if buf.len() < 5 || buf[1] != OP_GET_SBX_MASTER || buf[2] != 0x01 {
+        return None;
+    }
+    Some(buf[4] != 0)
 }
 
 /// Serialize one parameter write into its on-the-wire payload.
@@ -484,38 +608,79 @@ impl Transport {
         self.send(feature, param, Value::Bool(value))
     }
 
-    /// Read a float-typed parameter back from the device.
+    /// Send a raw `0x26` GET_PARAM query and read back the response.
     ///
-    /// The capture never exercised a GET_REPORT round trip, so the read path
-    /// remains unproven for every framing; it stays here as the check that
-    /// would distinguish "the device accepted the write" from "the device
-    /// silently ignored it".
-    pub fn get_float(&mut self, feature: Feature, param: u32) -> Result<f32> {
+    /// Wire-confirmed in `reverse/read.json`: the query is an ordinary
+    /// SET_REPORT, the answer arrives on interrupt IN endpoint `0x83`. `id`
+    /// is the raw parameter id, not the `id << 1` write selector.
+    pub fn get_param_raw(&mut self, id: u8) -> Result<f32> {
+        let query = encode_get_param(id);
+
         if self.dry_run {
-            println!(
-                "GET feature=0x{:08X} param={} (dry run -> 0.0)",
-                feature as u32, param
-            );
+            println!("GET id=0x{id:02X} (dry run -> 0.0)\n    {query:02X?}");
             return Ok(0.0);
         }
 
+        self.write_raw(&query)?;
+        let buf = self.read_interrupt()?;
+        let (got_id, value) =
+            decode_get_param_response(&buf).ok_or(Error::UnexpectedResponse { id })?;
+        if got_id != id {
+            return Err(Error::UnexpectedResponse { id });
+        }
+        Ok(value)
+    }
+
+    /// Read a float-typed parameter back from the device.
+    pub fn get_float(&mut self, feature: Feature, param: u32) -> Result<f32> {
+        let (id, _) =
+            id_with_confidence(feature, param).ok_or(Error::Unsupported { feature, param })?;
+        self.get_param_raw(id)
+    }
+
+    /// Read the `0x25 01 01` status bit -- believed, but not confirmed, to
+    /// be the SBX master switch. See [`encode_get_status`] for why this is
+    /// `Confidence::Derived` rather than `Captured`.
+    pub fn get_sbx_master(&mut self) -> Result<bool> {
+        const SBX_MASTER_SUB: u8 = 0x01;
+        let query = encode_get_status(SBX_MASTER_SUB);
+
+        if self.dry_run {
+            println!("GET status sub=0x{SBX_MASTER_SUB:02X} (dry run -> false)\n    {query:02X?}");
+            return Ok(false);
+        }
+
+        self.write_raw(&query)?;
+        let buf = self.read_interrupt()?;
+        decode_get_status_response(&buf).ok_or(Error::UnexpectedResponse { id: 0 })
+    }
+
+    /// Write the SBX master switch, using the **unconfirmed** guessed opcode
+    /// from [`encode_set_sbx_master_guess`], then re-read via [`Self::get_sbx_master`]
+    /// to report whether the device actually agreed.
+    ///
+    /// Returns the state read back after the write, which may not match
+    /// `on` if the guessed opcode did nothing. Callers should surface that
+    /// mismatch rather than assume the write took effect.
+    pub fn set_sbx_master_guess(&mut self, on: bool) -> Result<bool> {
+        let write = encode_set_sbx_master_guess(on);
+
+        if self.dry_run {
+            println!("SET sbx-master (guessed opcode, unconfirmed) = {on}\n    {write:02X?}");
+            return Ok(on);
+        }
+
+        self.write_raw(&write)?;
+        self.get_sbx_master()
+    }
+
+    /// Read one 16-byte HID input report from the interrupt endpoint the
+    /// device answers `0x26`/`0x25` queries on.
+    fn read_interrupt(&mut self) -> Result<[u8; READ_LEN]> {
         let handle = self.handle.as_mut().ok_or(Error::DeviceNotFound)?;
-        let request_type = rusb::request_type(
-            rusb::Direction::In,
-            rusb::RequestType::Vendor,
-            rusb::Recipient::Interface,
-        );
-        let mut buf = [0u8; 4];
-        handle.read_control(
-            request_type,
-            REQ_GET_PARAM,
-            0,
-            u16::from(VENDOR_INTERFACE),
-            &mut buf,
-            TIMEOUT,
-        )?;
-        let _ = KS_FLAG_GET; // used by the KsProperty read path once proven
-        Ok(f32::from_le_bytes(buf))
+        let mut buf = [0u8; READ_LEN];
+        handle.read_interrupt(READ_ENDPOINT, &mut buf, TIMEOUT)?;
+        Ok(buf)
     }
 }
 
@@ -763,6 +928,53 @@ mod tests {
         assert_eq!(buf.len(), 32);
         // Flags field is SET.
         assert_eq!(&buf[20..24], &KS_FLAG_SET.to_le_bytes());
+    }
+
+    #[test]
+    fn get_param_query_matches_captured_vectors() {
+        // reverse/e5-control-protocol.md, "0x26 -- GET_PARAM": `26019619`
+        // queries bass level (raw id 0x19, not the 0x32 write selector).
+        assert_eq!(prefix(&encode_get_param(id::BASS_LEVEL), 4), "26019619");
+        assert_eq!(prefix(&encode_get_param(id::SURROUND_LEVEL), 4), "26019601");
+    }
+
+    #[test]
+    fn get_param_response_decodes_captured_vectors() {
+        // Same section: `002601009619 3f000000` -> bass level 0.5.
+        let buf = hex("002601009619 3f000000 000000".replace(' ', ""));
+        assert_eq!(decode_get_param_response(&buf), Some((id::BASS_LEVEL, 0.5)));
+
+        // `002601009601 3df5c28f` -> surround level 0.12.
+        let buf = hex("002601009601 3df5c28f 000000".replace(' ', ""));
+        let (got_id, value) = decode_get_param_response(&buf).unwrap();
+        assert_eq!(got_id, id::SURROUND_LEVEL);
+        assert!((value - 0.12).abs() < 1e-6);
+    }
+
+    #[test]
+    fn get_param_response_rejects_wrong_opcode() {
+        let buf = hex("00230100961943000000000000".to_string());
+        assert_eq!(decode_get_param_response(&buf), None);
+    }
+
+    #[test]
+    fn get_status_query_and_response_match_captured_vectors() {
+        // reverse/e5-control-protocol.md, "0x25 -- status/master query".
+        assert_eq!(prefix(&encode_get_status(0x01), 3), "250101");
+
+        let on = hex("0025010001010000000000000000".to_string());
+        assert_eq!(decode_get_status_response(&on), Some(true));
+
+        let off = hex("0025010000010000000000000000".to_string());
+        assert_eq!(decode_get_status_response(&off), Some(false));
+    }
+
+    /// Decode a hex string (no separators) into bytes, for response fixtures.
+    fn hex(s: String) -> Vec<u8> {
+        (0..s.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&s[i..i + 2], 16).unwrap())
+            .collect()
     }
 
     #[test]

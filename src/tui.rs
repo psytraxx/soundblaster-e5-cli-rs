@@ -31,7 +31,7 @@ use crate::transport::Confidence;
 use crate::{Result, SoundBlasterE5};
 
 /// What a row writes when it changes.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 enum Control {
     /// A normalized `0.0..=1.0` level.
     Level { feature: Feature, param: u32 },
@@ -104,7 +104,13 @@ impl Row {
                 EQ_FREQS[self.band_cursor], self.bands[self.band_cursor]
             ),
             Control::Level { .. } => format!("{:.0}%", self.value * 100.0),
-            Control::Unavailable => "n/a".into(),
+            // `value` doubles as a tri-state here: negative means "never
+            // read" (write-only default), 0.0/1.0 means a read succeeded.
+            Control::Unavailable if self.value < 0.0 => "n/a".into(),
+            Control::Unavailable => {
+                let state = if self.value >= 0.5 { "on" } else { "off" };
+                format!("{state} (read-only)")
+            }
         }
     }
 }
@@ -157,7 +163,9 @@ fn rows() -> Vec<Row> {
         ]
     }
 
-    let mut rows = vec![row("SBX master", Control::Unavailable, 1.0, Derived)];
+    // -1.0: no wire *write* path is known yet, and until refreshed from the
+    // device the read hasn't happened either -- see `Row::display`.
+    let mut rows = vec![row("SBX master", Control::Unavailable, -1.0, Derived)];
 
     rows.extend(effect(
         "Surround",
@@ -241,6 +249,15 @@ impl App {
     /// Apply the selected row's current value to the device.
     fn write_selected(&mut self, dev: &mut SoundBlasterE5) {
         let row = &self.rows[self.selected];
+        // The SBX master row is `Unavailable` for the normal write path (no
+        // confirmed `0x20` selector) but has its own guessed `0x25` write;
+        // handle it before the general match falls through to a no-op.
+        if row.control == Control::Unavailable && row.label == "SBX master" {
+            self.write_sbx_master_guess(dev);
+            return;
+        }
+
+        let row = &self.rows[self.selected];
         let result = match row.control {
             Control::Level { feature, param } => dev.set_level_raw(feature, param, row.value),
             Control::Toggle { feature, param } => {
@@ -255,12 +272,38 @@ impl App {
         };
     }
 
+    /// Send the guessed SBX master write, then adopt whatever state the
+    /// device actually reads back afterward -- never assume the write took
+    /// effect just because it was sent. See
+    /// [`crate::SoundBlasterE5::set_sbx_master_guess`].
+    fn write_sbx_master_guess(&mut self, dev: &mut SoundBlasterE5) {
+        let want = self.rows[self.selected].value >= 0.5;
+        match dev.set_sbx_master_guess(want) {
+            Ok(got) => {
+                self.rows[self.selected].value = if got { 1.0 } else { 0.0 };
+                self.status = if got == want {
+                    "SBX master: write sent (opcode unconfirmed), device agrees".into()
+                } else {
+                    format!(
+                        "SBX master: sent {}, device still reads {} -- guessed opcode likely did nothing",
+                        if want { "on" } else { "off" },
+                        if got { "on" } else { "off" }
+                    )
+                };
+            }
+            Err(e) => self.status = format!("SBX master: {e}"),
+        }
+    }
+
     /// Left/right on a normal row adjusts its value; on the EQ row it moves
     /// which band is being edited (see `adjust_band`).
     fn adjust(&mut self, dir: f32, dev: &mut SoundBlasterE5) {
         match self.rows[self.selected].control {
+            Control::Unavailable if self.rows[self.selected].label == "SBX master" => {
+                self.toggle(dev);
+            }
             Control::Unavailable => {
-                self.status = "SBX master: no known wire encoding yet".into();
+                self.status = "no known wire encoding yet".into();
             }
             Control::EqBands => self.move_band_cursor(dir),
             _ => {
@@ -297,17 +340,68 @@ impl App {
     }
 
     fn toggle(&mut self, dev: &mut SoundBlasterE5) {
-        if self.rows[self.selected].is_toggle() {
+        let row = &self.rows[self.selected];
+        let is_sbx_master = row.control == Control::Unavailable && row.label == "SBX master";
+        if self.rows[self.selected].is_toggle() || is_sbx_master {
             let row = &mut self.rows[self.selected];
             row.value = if row.value >= 0.5 { 0.0 } else { 1.0 };
             self.write_selected(dev);
         }
+    }
+
+    /// Pull each row's live value from the device, replacing the built-in
+    /// defaults in [`rows`]. Best-effort: a row whose read fails (dry-run,
+    /// no device, or a parameter the `0x26` path doesn't cover -- EQ bands
+    /// and the master switch aren't confirmed at the individual-band level)
+    /// just keeps its default and is left alone.
+    ///
+    /// See `reverse/e5-control-protocol.md`, "Read path", and
+    /// [`crate::transport::Transport::get_float`].
+    fn refresh_from_device(&mut self, dev: &mut SoundBlasterE5) {
+        if dev.is_dry_run() {
+            self.status = "dry run: showing defaults, not device state".into();
+            return;
+        }
+
+        let mut read_ok = 0;
+        let mut read_err = 0;
+        for row in &mut self.rows {
+            match row.control {
+                Control::Level { feature, param } | Control::Toggle { feature, param } => {
+                    match dev.get_level_raw(feature, param) {
+                        Ok(v) => {
+                            row.value = v;
+                            read_ok += 1;
+                        }
+                        Err(_) => read_err += 1,
+                    }
+                }
+                // Only the SBX master row is `Unavailable` with a read to
+                // attempt; the label check keeps this from matching some
+                // future no-encoding row that has no read either.
+                Control::Unavailable if row.label == "SBX master" => match dev.get_sbx_master() {
+                    Ok(on) => {
+                        row.value = if on { 1.0 } else { 0.0 };
+                        read_ok += 1;
+                    }
+                    Err(_) => read_err += 1,
+                },
+                Control::EqBands | Control::Unavailable => {}
+            }
+        }
+
+        self.status = if read_err == 0 {
+            format!("loaded {read_ok} values from device")
+        } else {
+            format!("loaded {read_ok} values from device, {read_err} unread (kept defaults)")
+        };
     }
 }
 
 /// Run the interactive UI until the user quits.
 pub fn run(dev: &mut SoundBlasterE5) -> Result<()> {
     let mut app = App::new(dev.is_dry_run());
+    app.refresh_from_device(dev);
 
     enable_raw_mode()?;
     let mut out = io::stdout();

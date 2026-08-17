@@ -34,6 +34,9 @@ pub enum Error {
     Unsupported { feature: Feature, param: u32 },
     /// Terminal I/O failed while running the interactive UI.
     Io(std::io::Error),
+    /// A read query got a response that didn't match the expected shape or
+    /// echoed a different id than the one queried.
+    UnexpectedResponse { id: u8 },
 }
 
 impl From<std::io::Error> for Error {
@@ -57,6 +60,10 @@ impl std::fmt::Display for Error {
                 f,
                 "{feature:?} param {param} has no id in the selector table \
                  (see `sbx-e5 selectors` and reverse/e5-control-protocol.md)"
+            ),
+            Error::UnexpectedResponse { id } => write!(
+                f,
+                "read query for id 0x{id:02x} got an unexpected or mismatched response"
             ),
         }
     }
@@ -120,6 +127,36 @@ impl SoundBlasterE5 {
     /// Set any boolean parameter by `(feature, param)`.
     pub fn set_enable_raw(&mut self, feature: Feature, param: u32, on: bool) -> Result<()> {
         self.set_enable(feature, param, on)
+    }
+
+    /// Read any normalized level or boolean by `(feature, param)`.
+    ///
+    /// Uses the `0x26` read path (`reverse/e5-control-protocol.md`, "Read
+    /// path"), confirmed against a full panel-open state sync. Booleans ride
+    /// the same float field as `0.0`/`1.0`, same as writes.
+    pub fn get_level_raw(&mut self, feature: Feature, param: u32) -> Result<f32> {
+        self.transport.get_float(feature, param)
+    }
+
+    /// Read the SBX master switch.
+    ///
+    /// **Confidence: `Derived`, not `Captured`.** The response shape is
+    /// wire-confirmed, but which bit means "SBX master" specifically is a
+    /// reasonable guess, not a captured before/after toggle -- see
+    /// `reverse/e5-control-protocol.md`.
+    pub fn get_sbx_master(&mut self) -> Result<bool> {
+        self.transport.get_sbx_master()
+    }
+
+    /// Toggle the SBX master switch.
+    ///
+    /// **The write opcode is unconfirmed** -- no capture has ever shown a
+    /// SET for this switch; this is a guess extrapolated from the confirmed
+    /// read shape. Returns the state actually read back afterward, which
+    /// the caller should compare against the requested `on` to detect a
+    /// silently-ignored write. See `reverse/e5-control-protocol.md`.
+    pub fn set_sbx_master_guess(&mut self, on: bool) -> Result<bool> {
+        self.transport.set_sbx_master_guess(on)
     }
 
     /// True when `feature`/`param` has a captured wire encoding.
@@ -212,22 +249,6 @@ impl SoundBlasterE5 {
             Feature::EffectsSmartVolume,
             SmartVolume::Strength as u32,
             level,
-        )
-    }
-
-    /// Master switch for the whole SBX suite.
-    ///
-    /// **Not yet working.** The master toggle does not travel as a `0x20`
-    /// parameter write, so it has no entry in the selector table and this
-    /// returns [`Error::Unsupported`]. In the capture it corresponds to the
-    /// unexplained `0x23` report (`23 27 01 ...`); on the G6 it is a wholly
-    /// separate `0x5a 0x26` command family that the E5 does not appear to
-    /// use. Resolving it needs a capture of the SBX master button alone.
-    pub fn set_sbx_master(&mut self, on: bool) -> Result<()> {
-        self.set_enable(
-            Feature::EfxMasterControl,
-            proto::EfxMaster::SBXMasterOnOff as u32,
-            on,
         )
     }
 
