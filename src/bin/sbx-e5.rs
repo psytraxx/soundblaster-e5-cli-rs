@@ -324,25 +324,9 @@ fn optional(r: sbx_e5::Result<()>, what: &str) -> Result<()> {
 fn print_selectors() {
     use sbx_e5::transport::selector_of;
 
-    let rows: &[(&str, u8)] = &[
-        ("surround enable", id::SURROUND_ENABLE),
-        ("surround level", id::SURROUND_LEVEL),
-        ("dialog+ enable", id::DIALOG_PLUS_ENABLE),
-        ("dialog+ level", id::DIALOG_PLUS_LEVEL),
-        ("smart volume enable", id::SMART_VOLUME_ENABLE),
-        ("smart volume level", id::SMART_VOLUME_LEVEL),
-        ("smart volume mode", id::SMART_VOLUME_MODE),
-        ("crystalizer enable", id::CRYSTALIZER_ENABLE),
-        ("crystalizer level", id::CRYSTALIZER_LEVEL),
-        ("eq enable", id::EQ_ENABLE),
-        ("eq preamp", id::EQ_PREAMP),
-        ("bass enable", id::BASS_ENABLE),
-        ("bass level", id::BASS_LEVEL),
-    ];
-
     println!("  id   sel   parameter");
-    for (name, id) in rows {
-        println!("  0x{id:02x}  0x{:02x}  {name}", selector_of(*id));
+    for &(name, id) in id::TABLE {
+        println!("  0x{id:02x}  0x{:02x}  {name}", selector_of(id));
     }
     for band in 0..10u8 {
         let id = id::EQ_BAND0 + band;
