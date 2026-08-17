@@ -36,20 +36,16 @@ enum Control {
     /// All ten graphic-EQ bands, drawn as their own panel below the row
     /// list rather than inline. Left/right move a cursor between bands.
     EqBands,
-    /// Shown but not backed by the normal `Level`/`Toggle` write path.
-    /// Currently only the SBX master row, which uses its own `0x23`-opcode
-    /// read/write -- see [`App::write_sbx_master`].
-    Unavailable,
+    /// The SBX master switch. Behaves as an on/off switch everywhere the UI
+    /// is concerned, but has no `0x20` selector: it rides its own `0x23`
+    /// opcode -- see [`App::write_sbx_master`].
+    SbxMaster,
 }
 
 /// Center frequency label for each of the ten EQ bands.
 const EQ_FREQS: [&str; 10] = [
     "31Hz", "62Hz", "125Hz", "250Hz", "500Hz", "1kHz", "2kHz", "4kHz", "8kHz", "16kHz",
 ];
-
-/// Label of the SBX master row, which several places match on to route it
-/// to its own read/write path. See [`Row::is_sbx_master`].
-const SBX_MASTER: &str = "SBX master";
 
 struct Row {
     label: &'static str,
@@ -64,26 +60,15 @@ struct Row {
 }
 
 impl Row {
-    fn is_toggle(&self) -> bool {
-        matches!(self.control, Control::Toggle { .. })
-    }
-
-    /// The SBX master row, which is `Unavailable` because it uses its own
-    /// `0x23` opcode rather than the `Level`/`Toggle` write path, but still
-    /// behaves as an on/off switch everywhere the UI is concerned.
-    fn is_sbx_master(&self) -> bool {
-        self.control == Control::Unavailable && self.label == SBX_MASTER
-    }
-
     /// True for anything the user flips on and off, however it is wired.
     fn is_switch(&self) -> bool {
-        self.is_toggle() || self.is_sbx_master()
+        matches!(self.control, Control::Toggle { .. } | Control::SbxMaster)
     }
 
     /// Step size for one arrow-key press.
     fn step(&self) -> f32 {
         match self.control {
-            Control::Toggle { .. } | Control::Unavailable => 1.0,
+            Control::Toggle { .. } | Control::SbxMaster => 1.0,
             Control::EqBands => 0.5,
             Control::Level { .. } => 0.05,
         }
@@ -91,7 +76,7 @@ impl Row {
 
     fn range(&self) -> (f32, f32) {
         match self.control {
-            Control::Toggle { .. } | Control::Unavailable => (0.0, 1.0),
+            Control::Toggle { .. } | Control::SbxMaster => (0.0, 1.0),
             Control::EqBands => (-12.0, 12.0),
             Control::Level { .. } => (0.0, 1.0),
         }
@@ -103,27 +88,22 @@ impl Row {
         (((self.value - lo) / (hi - lo)) as f64).clamp(0.0, 1.0)
     }
 
+    /// True when a switch row is on. Levels ride the same field, so this is
+    /// only meaningful where [`Row::is_switch`] holds.
+    fn is_on(&self) -> bool {
+        self.value >= 0.5
+    }
+
     fn display(&self) -> String {
         match self.control {
-            Control::Toggle { .. } => {
-                if self.value >= 0.5 {
-                    "on".into()
-                } else {
-                    "off".into()
-                }
+            Control::Toggle { .. } | Control::SbxMaster => {
+                if self.is_on() { "on" } else { "off" }.into()
             }
             Control::EqBands => format!(
                 "{} {:+.1}dB",
                 EQ_FREQS[self.band_cursor], self.bands[self.band_cursor]
             ),
             Control::Level { .. } => format!("{:.0}%", self.value * 100.0),
-            Control::Unavailable => {
-                if self.value >= 0.5 {
-                    "on".into()
-                } else {
-                    "off".into()
-                }
-            }
         }
     }
 }
@@ -171,7 +151,7 @@ fn rows() -> Vec<Row> {
     }
 
     // Replaced by the real state on startup; see `App::refresh_from_device`.
-    let mut rows = vec![row(SBX_MASTER, Control::Unavailable, 0.0)];
+    let mut rows = vec![row("SBX master", Control::SbxMaster, 0.0)];
 
     rows.extend(effect(
         "Surround",
@@ -248,53 +228,35 @@ impl App {
 
     /// Apply the selected row's current value to the device.
     fn write_selected(&mut self, dev: &mut SoundBlasterE5) {
-        // The SBX master row has no `0x20` selector -- it uses its own
-        // `0x23 0x23` opcode -- so handle it before the general match
-        // below falls through to a no-op.
-        if self.rows[self.selected].is_sbx_master() {
-            self.write_sbx_master(dev);
-            return;
-        }
-
         let row = &self.rows[self.selected];
         let result = match row.control {
             Control::Level { feature, param } => dev.set_level_raw(feature, param, row.value),
-            Control::Toggle { feature, param } => {
-                dev.set_enable_raw(feature, param, row.value >= 0.5)
-            }
+            Control::Toggle { feature, param } => dev.set_enable_raw(feature, param, row.is_on()),
             Control::EqBands => dev.set_eq_band(row.band_cursor as u8, row.bands[row.band_cursor]),
-            Control::Unavailable => return,
+            // The master switch has no `0x20` selector -- it rides its own
+            // `0x23 0x23` opcode, and answers with the state it ended up in.
+            Control::SbxMaster => {
+                let got = dev.set_sbx_master(row.is_on());
+                if let Ok(on) = got {
+                    self.rows[self.selected].value = f32::from(u8::from(on));
+                }
+                got.map(|_| ())
+            }
         };
+
+        let row = &self.rows[self.selected];
         self.status = match result {
             Ok(()) => format!("{} = {}", row.label, row.display()),
             Err(e) => format!("{}: {e}", row.label),
         };
     }
 
-    /// Send the SBX master write and adopt the state the device reports
-    /// back, rather than assuming the write took. See
-    /// [`crate::SoundBlasterE5::set_sbx_master`].
-    fn write_sbx_master(&mut self, dev: &mut SoundBlasterE5) {
-        let want = self.rows[self.selected].value >= 0.5;
-        match dev.set_sbx_master(want) {
-            Ok(got) => {
-                self.rows[self.selected].value = if got { 1.0 } else { 0.0 };
-                self.status = format!("SBX master = {}", if got { "on" } else { "off" });
-            }
-            Err(e) => self.status = format!("SBX master: {e}"),
-        }
-    }
-
     /// Left/right on a normal row adjusts its value; on the EQ row it moves
     /// which band is being edited (see `adjust_band`).
     fn adjust(&mut self, dir: f32, dev: &mut SoundBlasterE5) {
         match self.rows[self.selected].control {
-            Control::Unavailable if self.rows[self.selected].is_sbx_master() => {
-                self.toggle(dev);
-            }
-            Control::Unavailable => {
-                self.status = "no known wire encoding yet".into();
-            }
+            // A switch has nothing to slide; left/right just flips it.
+            Control::SbxMaster => self.toggle(dev),
             Control::EqBands => self.move_band_cursor(dir),
             _ => {
                 let row = &mut self.rows[self.selected];
@@ -332,7 +294,7 @@ impl App {
     fn toggle(&mut self, dev: &mut SoundBlasterE5) {
         if self.rows[self.selected].is_switch() {
             let row = &mut self.rows[self.selected];
-            row.value = if row.value >= 0.5 { 0.0 } else { 1.0 };
+            row.value = if row.is_on() { 0.0 } else { 1.0 };
             self.write_selected(dev);
         }
     }
@@ -360,17 +322,16 @@ impl App {
                         Err(_) => read_err += 1,
                     }
                 }
-                // Only the SBX master row is `Unavailable` with a read to
-                // attempt; the check keeps this from matching some future
-                // no-encoding row that has no read either.
-                Control::Unavailable if row.is_sbx_master() => match dev.get_sbx_master() {
+                Control::SbxMaster => match dev.get_sbx_master() {
                     Ok(on) => {
-                        row.value = if on { 1.0 } else { 0.0 };
+                        row.value = f32::from(u8::from(on));
                         read_ok += 1;
                     }
                     Err(_) => read_err += 1,
                 },
-                Control::EqBands | Control::Unavailable => {}
+                // No single value to read: the bands are read individually
+                // and the panel keeps its own array.
+                Control::EqBands => {}
             }
         }
 
@@ -599,7 +560,7 @@ fn draw_rows(f: &mut ratatui::Frame, app: &App, area: Rect) {
         );
 
         if row.is_switch() {
-            let (glyph, colour) = if row.value >= 0.5 {
+            let (glyph, colour) = if row.is_on() {
                 ("[x]", Color::Green)
             } else {
                 ("[ ]", Color::DarkGray)
