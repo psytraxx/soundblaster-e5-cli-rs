@@ -32,3 +32,5 @@ Dates are `YYYY-MM-DD`. See the README's TODO section for known gaps.
   the first was being looked at; now they are read until the relevant one
   turns up. The same problem could make any value read return a stale
   answer.
+- The SBX master switch is now drawn as a checkbox in the terminal UI, like
+  every other on/off switch, instead of as a slider bar.
