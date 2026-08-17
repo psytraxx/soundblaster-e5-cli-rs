@@ -21,7 +21,6 @@ Dates are `YYYY-MM-DD`. See the README's TODO section for known gaps.
 - The interactive terminal UI now opens showing each effect's actual
   current setting on the device, instead of a built-in guess. Levels and
   on/off switches are read back on startup.
-- `sbx-e5 sbx on`/`off` and the terminal UI's SBX master row now attempt a
-  read and a write for the master switch, and report whether the device
-  agreed afterward. Confirmed on real hardware to not work yet — both are
-  still a guess pending a proper capture (see the README's TODO).
+- The SBX master switch can now be switched on and off from the command
+  line and the terminal UI, and its current state is shown on startup like
+  every other effect.

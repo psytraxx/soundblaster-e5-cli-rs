@@ -26,32 +26,26 @@
 //! family, a different device. `Confidence::Captured` vs `Derived` tracks
 //! which is which; see `sbx-e5 selectors`.
 //!
-//! A second capture (`reverse/read.json`, a control-panel state sync)
-//! resolved the read path. It is **not** a GET_REPORT: the query goes out as
-//! an ordinary SET_REPORT and the answer arrives on **interrupt IN endpoint
-//! `0x83`**. Opcode `0x26` reads a parameter value -- confirmed against
-//! every id in the panel-open sync, values matching plausible slider
-//! positions. See [`encode_get_param`] / [`Transport::get_float`].
-//!
-//! Opcode `0x25` returns a single status bit with the same response shape,
-//! and is *believed* to be the SBX master switch -- but this is
-//! `Confidence::Derived`, not `Captured`: the capture shows two different
-//! sub-queries returning different bits within one poll batch, never a
-//! before/after around an actual button toggle. See
-//! [`encode_get_status`] / [`Transport::get_sbx_master`].
+//! The read path is confirmed and is **not** a GET_REPORT: the query goes
+//! out as an ordinary SET_REPORT and the answer arrives on **interrupt IN
+//! endpoint `0x83`**. Opcode `0x26` reads a parameter value -- confirmed
+//! against every id in a panel-open state sync, values matching plausible
+//! slider positions. See [`encode_get_param`] / [`Transport::get_float`].
 //!
 //! The read path addresses parameters by their **raw id** -- `0x19` for bass
 //! level -- not by the `id << 1` selector the `0x20` write path uses. Do not
 //! feed [`selector_of`] into a read.
 //!
+//! The SBX master switch is confirmed both ways: writing it sends
+//! `23 23 01 <flag>` followed by a `23 24 00` commit
+//! ([`encode_set_sbx_master`] / [`Transport::set_sbx_master`]), and reading
+//! it sends the same `23 24 00` commit report on its own -- it doubles as a
+//! standalone status query, answering with the current state on the same
+//! response shape either way ([`decode_master_commit_response`] /
+//! [`Transport::get_sbx_master`]). See `reverse/e5-control-protocol.md`.
+//!
 //! Still open: whether the `0x26` and `0x23` *write* reports are required or
-//! merely re-asserted by the control panel, and the SBX master **write**
-//! path -- the Windows control panel clearly has one (the toggle works
-//! there), it just hasn't shown up in a capture yet. A guessed write is
-//! wired up as [`encode_set_sbx_master_guess`] /
-//! [`crate::SoundBlasterE5::set_sbx_master_guess`], extrapolated from the
-//! confirmed read shape rather than captured -- treat any success as
-//! circumstantial.
+//! merely re-asserted by the control panel.
 //!
 //! The pre-capture guesses are kept as [`Framing::VendorTriple`] and
 //! [`Framing::KsProperty`] so the reconstruction is still inspectable, but
@@ -92,10 +86,8 @@ const OP_MASTER: u8 = 0x23;
 /// bytes following -- same opcode as [`OP_COMMIT`], distinguished by the
 /// response coming back on the interrupt IN endpoint.
 const OP_GET_PARAM: u8 = 0x26;
-/// SBX master on/off query.
-const OP_GET_SBX_MASTER: u8 = 0x25;
 
-/// Interrupt IN endpoint the device answers `0x26`/`0x25` queries on.
+/// Interrupt IN endpoint the device answers `0x26` queries on.
 /// (`reverse/e5-control-protocol.md`, "Read path".)
 const READ_ENDPOINT: u8 = 0x83;
 /// Every captured read response is this long.
@@ -157,7 +149,7 @@ pub const SEL_BASS: u8 = selector_of(id::BASS_LEVEL);
 pub const SEL_SURROUND: u8 = selector_of(id::SURROUND_LEVEL);
 
 /// Map a `(Feature, param)` pair to its **raw** parameter id and how well it
-/// is known. This is the id the read path (`0x26`/`0x25`) addresses;
+/// is known. This is the id the `0x26` read path addresses;
 /// [`selector_with_confidence`] shifts it left one bit for the write path.
 ///
 /// Returns `None` only for parameters with no id in the table at all.
@@ -338,47 +330,50 @@ pub fn encode_get_param(id: u8) -> [u8; REPORT_LEN] {
     r
 }
 
-/// Build a `0x25` status query report.
+/// Build the `0x23 0x23` SBX master enable/disable report.
 ///
-/// Response shape is wire-confirmed in `reverse/read.json`: `25 01 <sub>`
-/// answered on interrupt IN endpoint `0x83` with `00 25 01 00 <state> 01
-/// ...`, a single boolean-looking state byte. **What the state means is not
-/// confirmed** -- two different `sub` values were seen back-to-back in one
-/// panel-open poll, each returning a different bit, but never captured
-/// before/after an actual SBX-button toggle. Treated as `Confidence::Derived`
-/// for "this is the SBX master," not `Captured`; see
-/// `reverse/e5-control-protocol.md`.
-///
-/// `sub = 0x01` is the value seen in the capture; kept as a parameter in
-/// case the two observed sub-queries turn out to address different things.
-pub fn encode_get_status(sub: u8) -> [u8; REPORT_LEN] {
+/// Wire-confirmed in `reverse/sbx.json` across two full on/off cycles:
+/// `23 23 01 01` precedes each fade-in, `23 23 01 00` precedes each
+/// fade-out. See `reverse/e5-control-protocol.md`, "`0x23` -- SBX master
+/// enable / keepalive".
+pub fn encode_set_sbx_master(on: bool) -> [u8; REPORT_LEN] {
     let mut r = [0u8; REPORT_LEN];
-    r[0] = OP_GET_SBX_MASTER;
-    r[1] = 0x01;
-    r[2] = sub;
-    r
-}
-
-/// Build a **guessed** `0x25` SBX master write report.
-///
-/// **Not wire-confirmed. No capture has ever shown a SET for this switch --**
-/// the Windows control panel clearly has a working write path (the button
-/// works there), it just hasn't shown up in a capture yet. This shape is
-/// extrapolated from the confirmed `0x25 01 <sub>` *read* query
-/// ([`encode_get_status`]) by analogy with how `0x26` carries its selector
-/// and payload in the same positions for both GET and (per the G6 DATA/
-/// COMMIT pattern `encode_commit` documents) SET: opcode, echo byte, then
-/// sub-selector, with the value appended where the read's echoed state sits.
-///
-/// Treat any success as circumstantial until a capture confirms it byte for
-/// byte -- see `reverse/e5-control-protocol.md`.
-pub fn encode_set_sbx_master_guess(on: bool) -> [u8; REPORT_LEN] {
-    let mut r = [0u8; REPORT_LEN];
-    r[0] = OP_GET_SBX_MASTER;
-    r[1] = 0x01;
+    r[0] = OP_MASTER;
+    r[1] = 0x23;
     r[2] = 0x01;
     r[3] = u8::from(on);
     r
+}
+
+/// Build the `0x23 0x24` commit report that follows an `0x23 0x23`
+/// enable/disable write.
+///
+/// Wire-confirmed alongside [`encode_set_sbx_master`]: the panel always
+/// sends this immediately after the enable/disable write, never on its own.
+/// Whether the device actually requires it (versus `0x23 0x23` alone being
+/// sufficient) is untested -- see the open item in
+/// `reverse/e5-control-protocol.md`.
+pub fn encode_master_commit() -> [u8; REPORT_LEN] {
+    let mut r = [0u8; REPORT_LEN];
+    r[0] = OP_MASTER;
+    r[1] = 0x24;
+    r
+}
+
+/// Parse a `0x23 0x24` commit response (16 bytes from the interrupt
+/// endpoint) for the state bit it echoes back.
+///
+/// Wire-confirmed in `reverse/sbx.json` across all four toggles in two
+/// on/off cycles: the commit that follows `encode_set_sbx_master` always
+/// answers with the master state at offset 4 -- `00 23 24 00 01 00 01`
+/// after turning on, `00 23 24 00 00 00 01` after turning off. This is the
+/// SBX master read: it rides on the write's own commit response rather
+/// than needing a separate query.
+pub fn decode_master_commit_response(buf: &[u8]) -> Option<bool> {
+    if buf.len() < 5 || buf[1] != OP_MASTER || buf[2] != 0x24 {
+        return None;
+    }
+    Some(buf[4] != 0)
 }
 
 /// Parse a `0x26` GET_PARAM response (16 bytes from the interrupt endpoint).
@@ -392,18 +387,6 @@ pub fn decode_get_param_response(buf: &[u8]) -> Option<(u8, f32)> {
     let id = buf[5];
     let value = f32::from_be_bytes(buf[6..10].try_into().ok()?);
     Some((id, value))
-}
-
-/// Parse a `0x25` status response (16 bytes from the interrupt endpoint).
-///
-/// Returns the state bit at offset 4, or `None` if the response doesn't
-/// echo the `0x25` opcode shape. See [`encode_get_status`] for the caveat
-/// on what this bit means.
-pub fn decode_get_status_response(buf: &[u8]) -> Option<bool> {
-    if buf.len() < 5 || buf[1] != OP_GET_SBX_MASTER || buf[2] != 0x01 {
-        return None;
-    }
-    Some(buf[4] != 0)
 }
 
 /// Serialize one parameter write into its on-the-wire payload.
@@ -638,44 +621,50 @@ impl Transport {
         self.get_param_raw(id)
     }
 
-    /// Read the `0x25 01 01` status bit -- believed, but not confirmed, to
-    /// be the SBX master switch. See [`encode_get_status`] for why this is
-    /// `Confidence::Derived` rather than `Captured`.
-    pub fn get_sbx_master(&mut self) -> Result<bool> {
-        const SBX_MASTER_SUB: u8 = 0x01;
-        let query = encode_get_status(SBX_MASTER_SUB);
+    /// Write the SBX master switch: `0x23 0x23` enable/disable followed by
+    /// the `0x23 0x24` commit the panel always sends after it. Both are
+    /// wire-confirmed in `reverse/sbx.json` -- see [`encode_set_sbx_master`].
+    ///
+    /// The commit's own response echoes the resulting state (see
+    /// [`decode_master_commit_response`]), so this returns what the device
+    /// actually reports afterward rather than assuming the write took.
+    pub fn set_sbx_master(&mut self, on: bool) -> Result<bool> {
+        let write = encode_set_sbx_master(on);
+        let commit = encode_master_commit();
 
         if self.dry_run {
-            println!("GET status sub=0x{SBX_MASTER_SUB:02X} (dry run -> false)\n    {query:02X?}");
+            println!("SET sbx-master = {on}\n    {write:02X?}\n    commit {commit:02X?}");
+            return Ok(on);
+        }
+
+        self.write_raw(&write)?;
+        self.write_raw(&commit)?;
+        let buf = self.read_interrupt()?;
+        decode_master_commit_response(&buf).ok_or(Error::UnexpectedResponse { id: 0 })
+    }
+
+    /// Read the SBX master switch without changing it.
+    ///
+    /// Wire-confirmed in `reverse/read.json`: the panel-open sync sends a
+    /// bare `0x23 0x24` commit query with no preceding `0x23 0x23` write,
+    /// and gets the current master state back on the same response shape
+    /// [`Self::set_sbx_master`] reads. So `0x23 0x24` alone is a standalone
+    /// status query, not only a write's commit half.
+    pub fn get_sbx_master(&mut self) -> Result<bool> {
+        let query = encode_master_commit();
+
+        if self.dry_run {
+            println!("GET sbx-master (dry run -> false)\n    {query:02X?}");
             return Ok(false);
         }
 
         self.write_raw(&query)?;
         let buf = self.read_interrupt()?;
-        decode_get_status_response(&buf).ok_or(Error::UnexpectedResponse { id: 0 })
-    }
-
-    /// Write the SBX master switch, using the **unconfirmed** guessed opcode
-    /// from [`encode_set_sbx_master_guess`], then re-read via [`Self::get_sbx_master`]
-    /// to report whether the device actually agreed.
-    ///
-    /// Returns the state read back after the write, which may not match
-    /// `on` if the guessed opcode did nothing. Callers should surface that
-    /// mismatch rather than assume the write took effect.
-    pub fn set_sbx_master_guess(&mut self, on: bool) -> Result<bool> {
-        let write = encode_set_sbx_master_guess(on);
-
-        if self.dry_run {
-            println!("SET sbx-master (guessed opcode, unconfirmed) = {on}\n    {write:02X?}");
-            return Ok(on);
-        }
-
-        self.write_raw(&write)?;
-        self.get_sbx_master()
+        decode_master_commit_response(&buf).ok_or(Error::UnexpectedResponse { id: 0 })
     }
 
     /// Read one 16-byte HID input report from the interrupt endpoint the
-    /// device answers `0x26`/`0x25` queries on.
+    /// device answers `0x26`/`0x23` queries on.
     fn read_interrupt(&mut self) -> Result<[u8; READ_LEN]> {
         let handle = self.handle.as_mut().ok_or(Error::DeviceNotFound)?;
         let mut buf = [0u8; READ_LEN];
@@ -958,15 +947,27 @@ mod tests {
     }
 
     #[test]
-    fn get_status_query_and_response_match_captured_vectors() {
-        // reverse/e5-control-protocol.md, "0x25 -- status/master query".
-        assert_eq!(prefix(&encode_get_status(0x01), 3), "250101");
+    fn set_sbx_master_matches_captured_vectors() {
+        // reverse/e5-control-protocol.md, "0x23 -- SBX master enable / keepalive".
+        assert_eq!(prefix(&encode_set_sbx_master(true), 4), "23230101");
+        assert_eq!(prefix(&encode_set_sbx_master(false), 4), "23230100");
+        assert_eq!(prefix(&encode_master_commit(), 2), "2324");
+    }
 
-        let on = hex("0025010001010000000000000000".to_string());
-        assert_eq!(decode_get_status_response(&on), Some(true));
+    #[test]
+    fn master_commit_response_decodes_captured_vectors() {
+        // reverse/e5-control-protocol.md, "0x23 -- SBX master enable / keepalive".
+        let after_on = hex("002324000100010000000000".to_string());
+        assert_eq!(decode_master_commit_response(&after_on), Some(true));
 
-        let off = hex("0025010000010000000000000000".to_string());
-        assert_eq!(decode_get_status_response(&off), Some(false));
+        let after_off = hex("002324000000010000000000".to_string());
+        assert_eq!(decode_master_commit_response(&after_off), Some(false));
+    }
+
+    #[test]
+    fn master_commit_response_rejects_wrong_opcode() {
+        let buf = hex("00260100961943000000000000".to_string());
+        assert_eq!(decode_master_commit_response(&buf), None);
     }
 
     /// Decode a hex string (no separators) into bytes, for response fixtures.

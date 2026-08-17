@@ -40,7 +40,9 @@ enum Control {
     /// All ten graphic-EQ bands, drawn as their own panel below the row
     /// list rather than inline. Left/right move a cursor between bands.
     EqBands,
-    /// Shown but not settable: no known wire encoding.
+    /// Shown but not backed by the normal `Level`/`Toggle` write path.
+    /// Currently only the SBX master row, which uses its own `0x23`-opcode
+    /// read/write -- see [`App::write_sbx_master`].
     Unavailable,
 }
 
@@ -104,12 +106,16 @@ impl Row {
                 EQ_FREQS[self.band_cursor], self.bands[self.band_cursor]
             ),
             Control::Level { .. } => format!("{:.0}%", self.value * 100.0),
-            // `value` doubles as a tri-state here: negative means "never
-            // read" (write-only default), 0.0/1.0 means a read succeeded.
+            // `value` doubles as a tri-state here: negative means "not read
+            // yet" (dry-run, or the startup read failed); 0.0/1.0 is the
+            // device's actual last-known state.
             Control::Unavailable if self.value < 0.0 => "n/a".into(),
             Control::Unavailable => {
-                let state = if self.value >= 0.5 { "on" } else { "off" };
-                format!("{state} (read-only)")
+                if self.value >= 0.5 {
+                    "on".into()
+                } else {
+                    "off".into()
+                }
             }
         }
     }
@@ -163,9 +169,8 @@ fn rows() -> Vec<Row> {
         ]
     }
 
-    // -1.0: no wire *write* path is known yet, and until refreshed from the
-    // device the read hasn't happened either -- see `Row::display`.
-    let mut rows = vec![row("SBX master", Control::Unavailable, -1.0, Derived)];
+    // -1.0: unknown until refreshed from the device -- see `Row::display`.
+    let mut rows = vec![row("SBX master", Control::Unavailable, -1.0, Captured)];
 
     rows.extend(effect(
         "Surround",
@@ -250,10 +255,10 @@ impl App {
     fn write_selected(&mut self, dev: &mut SoundBlasterE5) {
         let row = &self.rows[self.selected];
         // The SBX master row is `Unavailable` for the normal write path (no
-        // confirmed `0x20` selector) but has its own guessed `0x25` write;
+        // `0x20` selector -- it uses its own `0x23 0x23` opcode instead);
         // handle it before the general match falls through to a no-op.
         if row.control == Control::Unavailable && row.label == "SBX master" {
-            self.write_sbx_master_guess(dev);
+            self.write_sbx_master(dev);
             return;
         }
 
@@ -272,24 +277,15 @@ impl App {
         };
     }
 
-    /// Send the guessed SBX master write, then adopt whatever state the
-    /// device actually reads back afterward -- never assume the write took
-    /// effect just because it was sent. See
-    /// [`crate::SoundBlasterE5::set_sbx_master_guess`].
-    fn write_sbx_master_guess(&mut self, dev: &mut SoundBlasterE5) {
+    /// Send the SBX master write and adopt the state the device reports
+    /// back, rather than assuming the write took. See
+    /// [`crate::SoundBlasterE5::set_sbx_master`].
+    fn write_sbx_master(&mut self, dev: &mut SoundBlasterE5) {
         let want = self.rows[self.selected].value >= 0.5;
-        match dev.set_sbx_master_guess(want) {
+        match dev.set_sbx_master(want) {
             Ok(got) => {
                 self.rows[self.selected].value = if got { 1.0 } else { 0.0 };
-                self.status = if got == want {
-                    "SBX master: write sent (opcode unconfirmed), device agrees".into()
-                } else {
-                    format!(
-                        "SBX master: sent {}, device still reads {} -- guessed opcode likely did nothing",
-                        if want { "on" } else { "off" },
-                        if got { "on" } else { "off" }
-                    )
-                };
+                self.status = format!("SBX master = {}", if got { "on" } else { "off" });
             }
             Err(e) => self.status = format!("SBX master: {e}"),
         }

@@ -138,25 +138,18 @@ impl SoundBlasterE5 {
         self.transport.get_float(feature, param)
     }
 
-    /// Read the SBX master switch.
-    ///
-    /// **Confidence: `Derived`, not `Captured`.** The response shape is
-    /// wire-confirmed, but which bit means "SBX master" specifically is a
-    /// reasonable guess, not a captured before/after toggle -- see
-    /// `reverse/e5-control-protocol.md`.
-    pub fn get_sbx_master(&mut self) -> Result<bool> {
-        self.transport.get_sbx_master()
-    }
-
     /// Toggle the SBX master switch.
     ///
-    /// **The write opcode is unconfirmed** -- no capture has ever shown a
-    /// SET for this switch; this is a guess extrapolated from the confirmed
-    /// read shape. Returns the state actually read back afterward, which
-    /// the caller should compare against the requested `on` to detect a
-    /// silently-ignored write. See `reverse/e5-control-protocol.md`.
-    pub fn set_sbx_master_guess(&mut self, on: bool) -> Result<bool> {
-        self.transport.set_sbx_master_guess(on)
+    /// Sends `23 23 01 <flag>` followed by the `23 24 00` commit, and
+    /// returns the state the device actually reports afterward (from the
+    /// commit's own response) rather than assuming the write took.
+    pub fn set_sbx_master(&mut self, on: bool) -> Result<bool> {
+        self.transport.set_sbx_master(on)
+    }
+
+    /// Read the SBX master switch without changing it.
+    pub fn get_sbx_master(&mut self) -> Result<bool> {
+        self.transport.get_sbx_master()
     }
 
     /// True when `feature`/`param` has a captured wire encoding.

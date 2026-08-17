@@ -49,7 +49,7 @@ sbx-e5 crystalizer 0.5
 sbx-e5 dialog-plus 0.5
 sbx-e5 smart-volume 0.74
 sbx-e5 eq --band 9 --gain 6
-sbx-e5 sbx on|off              # SBX master switch (not yet implemented, see TODO)
+sbx-e5 sbx on|off              # SBX master switch
 ```
 
 Every level command also accepts `on`/`off` in place of a number, to disable
@@ -126,14 +126,6 @@ cargo test      # framing/encoding unit tests, no hardware needed
 
 ## TODO
 
-- **SBX master switch read + write.** `sbx on`/`off` and the TUI's SBX
-  master row send a guessed `0x25`-based write and read — confirmed on real
-  hardware (2026-08-17) to not work: the write doesn't stick and the read
-  doesn't reflect the actual switch. The master toggle doesn't travel as a
-  `0x20` parameter write like everything else, so there's no selector to
-  derive; needs a fresh capture bracketing an actual button click. See
-  `reverse/e5-control-protocol.md`, "Capturing the SBX master toggle", for
-  the exact steps.
 - **Profile loading.** Creative ships several stock profiles (see
   `reverse/profiles/E5/Default.xml`); there is no way yet to load one as a
   single operation instead of setting each parameter by hand.

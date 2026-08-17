@@ -76,14 +76,66 @@ Bass sweep — it does **not** track the slider. Treated as a mode/keepalive the
 control panel re-asserts, interleaved 1:1 with the `0x20` writes. Not required
 per value. May need to be sent once at init; test empirically.
 
-### `0x23` — master/keepalive
+### `0x23` — SBX master enable / read / keepalive
+
+Several subcommands, distinguished by byte 1:
+
+**`23 23` — SBX enable/disable.** Byte 3 is the flag.
 
 ```
-23 27 01 00 00 00 00 00
+offset  bytes     meaning
+0       23         opcode = SBX master
+1       23         subcommand = enable/disable
+2       01         fixed
+3       EN         01 = ON, 00 = OFF
+4..63   00         pad
 ```
 
-Appears periodically (roughly every ~80–160 param writes), not correlated to
-any value. Master enable / heartbeat.
+| State | Report prefix |
+|---|---|
+| SBX ON | `23230101` |
+| SBX OFF | `23230100` |
+
+`23 23 01 01` precedes each fade-in, `23 23 01 00` precedes each fade-out.
+Its own response on interrupt IN echoes the flag: `00 23 23 00 01 <EN>`.
+
+**`23 24` — commit / read.** Always sent immediately after `23 23`, but also
+works as a **standalone status query** with no preceding write: sent alone
+(`23 24 00`, no flag byte) it returns the current master state on the same
+response shape, making it the read half of this switch.
+
+```
+offset  bytes     meaning
+0       23         opcode = SBX master
+1       24         subcommand = commit / read
+2..63   00         pad (query has no payload)
+```
+
+Response (interrupt IN, ep `0x83`, 16 bytes):
+
+```
+offset  bytes     meaning
+0       00         leading zero / status
+1       23         echoes opcode
+2       24         echoes subcommand
+3       00
+4       ST         current master state: 01 = ON, 00 = OFF
+5       00
+6       01
+7..     00         pad
+```
+
+| Query | Response | Meaning |
+|---|---|---|
+| `23 24 00` | `00 23 24 00 01 00 01` | master is ON |
+| `23 24 00` | `00 23 24 00 00 00 01` | master is OFF |
+
+**`23 27 01` — keepalive/master-sync.** Fires periodically on its own, not
+correlated to any value or toggle.
+
+After each toggle the panel also replays the `0x26 01 96 xx` level ramp
+(`00 02 04 07 09 18`) — cosmetic fade to/from the effect setpoint, not part of
+the enable state.
 
 ## Read path (query → interrupt IN) — CONFIRMED
 
@@ -117,7 +169,7 @@ offset  bytes     meaning
 ...     00         pad
 ```
 
-### `0x26` — GET_PARAM (the value read path) — CONFIRMED
+### `0x26` — GET_PARAM (the value read path)
 
 This is the counterpart to `0x20` SET_PARAM, and the answer to "how do I read
 a slider value back".
@@ -151,7 +203,7 @@ offset  bytes              meaning
 parameter id (`BASS_LEVEL` = `0x19`), **not** the `id << 1` selector the
 `0x20` write path uses (`0x32`). The read path does not double the id.
 
-#### Decoded panel-open state sync (`read.json`)
+#### Decoded panel-open state sync
 
 Every id below maps 1:1 onto `transport::id::*`, and every value is a clean,
 plausible control-panel reading — enables are exact `0.0`/`1.0`, levels are
@@ -186,50 +238,22 @@ Raw vectors:
 The `0x17 = 80.0` reading is the one value that is not normalized `0..1`;
 it is not in the current `id` table and its meaning is unresolved.
 
-### `0x25` — status/master query — response shape confirmed, semantics partial
+### Other status reads
 
-```
-query:     25 01 SS 00…          SS = sub-selector byte (offset 2)
-response:  00 25 01 00 VV 01 …   VV = state byte at offset 4
-```
+| Query | Response (`usbhid.data`) |
+|---|---|
+| `3f 00` | `00 3f 00 01 01 00…` |
+| `22 00` | `00 22 00 00 00 00…` |
+| `25 01` | `00 25 01 00 01 00…` |
+| `25 01 01` | `00 25 01 00 01 01 00…` |
 
-Two distinct sub-queries observed in the same panel-open poll sequence
-(~0.14s apart, both in one session -- **not** a before/after toggle):
-
-| Time | Query | Response | Byte @ offset 4 |
-|---|---|---|---|
-| 4.5854 | `25 01 00` | `00 25 01 00 00 01` | `0x00` |
-| 4.7244 | `25 01 01` | `00 25 01 00 01 01` | `0x01` |
-
-The response shape (echo opcode/sub at 1-2, single state byte at 4) is
-solid. What's *not* established: whether `SS` selects "which switch"
-(master vs. some other on/off) or the state byte is what changed and `SS`
-is incidental -- these were captured back-to-back in one poll batch, not
-across a user action, so there is no before/after to pin the meaning down.
-Treat this as "a `0x25 01 xx` query returns a boolean," not yet as
-"confirmed SBX master read." Needs a capture with the SBX button toggled
-mid-session and the same `SS` value queried both before and after.
-
-**Tried on real hardware 2026-08-17: does not work.** `sbx-e5 sbx on|off`
-both reads the wrong thing and fails to write anything -- confirming the
-caveat above was not just theoretical. `id::get_sbx_master`'s `SS=0x01`
-guess is not actually the master switch (or is, but the write guess
-`encode_set_sbx_master_guess` does nothing), and there is still no captured
-SET for this switch at all. See "Capturing the SBX master toggle" below.
-
-### Other status reads (decoded shape, semantics open)
-
-| Query | Response | Note |
-|---|---|---|
-| `3f00` | `003f00010100…` | probed first on every panel open — likely a version/hello |
-| `2200` | `002200000000…` | all-zero response |
-| `232701` | `00232701006400…` | `0x64`=100 — polled ~28x, a level/keepalive poll |
-| `232a00` | `00232a008096 17 0000 9643…` | carries id+f32 pairs (`0x17`→300.0, `0x0a`, `0x0b`); an EQ-band or range table |
-| `230500` | `002305000001313c0150…` | fixed blob, appears twice per open |
-
-The static-disassembly opcode guess (`0x8001000`, `0x50`/`0x52`) is
-**disproven** — real read opcodes are `0x26` (values), `0x25` (SBX master),
-and `0x23`/`0x3f`/`0x22` (status).
+**Scope caveat:** `3f 00`, `22 00`, and `25 01`/`25 01 01` are small
+status/flag reads (likely `GetContext`/`GetFeatureInfo`-style) whose
+semantics remain undecoded — they are not the SBX master switch, which
+uses `23 24` (see above). The static-disassembly opcode guess
+(`0x8001000`, `0x50`/`0x52`) is **disproven** — real read opcodes seen so
+far are `0x26` (parameter values), `0x23` (master), and `0x3f`/`0x22`/`0x25`
+(undecoded status).
 
 ### Rust read path
 
@@ -237,18 +261,6 @@ and `0x23`/`0x3f`/`0x22` (status).
 // write_control(0x21, 0x09, 0x0200, 3, &query, TIMEOUT);
 // read_interrupt(0x83, &mut buf16, TIMEOUT);   // NOT a control GET_REPORT
 ```
-
-## Capturing the SBX master toggle (open, needed)
-
-Every other opcode in this document was resolved from a **panel-open state
-sync** or a **slider sweep** -- neither exercises the master on/off button,
-which is why its write path (and the true meaning of the `0x25` read) is
-still unconfirmed. Getting it needs a capture that specifically brackets a
-manual click on the SBX button, isolated from every other action.
-
-Full step-by-step instructions, including Wireshark filters, what to diff,
-and how to feed the result back into `src/transport.rs`, are in
-[`docs/sbx-master-capture.md`](../docs/sbx-master-capture.md).
 
 ## Verified test vectors
 
@@ -289,22 +301,16 @@ fn encode_set_param(param: u8, value: f32) -> [u8; 64] {
 
 ## Open items
 
-- **TODO: SBX master read + write.** Confirmed not working on real hardware
-  (2026-08-17) -- both `sbx-e5 sbx on|off` and the TUI's SBX master row are
-  guesses that don't hold up. Needs the dedicated capture in "Capturing the
-  SBX master toggle" above.
 - Fill the param-selector table for remaining effects (capture each in isolation).
-- Determine whether `0x26`/`0x23` reports are required at init or purely cosmetic
-  (send only the `0x20` float and listen).
+- Determine whether `0x26`/`0x23 27` reports are required at init or purely
+  cosmetic (send only the `0x20` float, or only `0x23 23`/`0x23 24`, and
+  listen).
 - Identify parameter id `0x17` (reads back `80.0`, not normalized `0..1`).
-- Decode the `0x3f`/`0x22`/`0x23 0x2a` status reads (map to Get* semantics).
-- Confirm the `0x25` sub-selector byte: both `25 01 00` and `25 01 01` were
-  seen; whether the second byte selects *which* master or is a sequence
-  counter is unresolved (state is unambiguously the response byte at off 4).
+- Decode the `0x3f`/`0x22`/`0x25` status reads (map to Get* semantics).
 - Cross-check read ids against the write selector table: reads use the **raw**
-  id, writes use `id << 1`. The read capture therefore independently confirms
-  the raw-id half of every selector currently marked `Derived` — but not the
-  doubling rule itself, which stays confirmed only for Bass/Surround.
+  id, writes use `id << 1`. The read data independently confirms the raw-id
+  half of every selector currently marked `Derived` — but not the doubling
+  rule itself, which stays confirmed only for Bass/Surround.
 - Audible A/B (`bass 0.0` vs `bass 1.0`) before dropping "unverified" caveats.
 
 ## Captures
@@ -313,3 +319,5 @@ fn encode_set_param(param: u8, value: f32) -> [u8; 64] {
 - Bass 0→100% sweep (JSON export) — the definitive value-path capture.
 - `read.json` — panel-open state sync, address 9 / USBPcap4. Contains the
   confirmed read handshake (query out → interrupt IN on ep 0x83).
+- `sbx.json` — two full SBX master on/off cycles. Contains the confirmed
+  `23 23 01 <flag>` write and its `23 24 00` commit.
