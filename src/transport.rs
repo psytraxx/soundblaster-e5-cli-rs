@@ -35,21 +35,12 @@
 //! `23 24 00` alone reads the current state back
 //! ([`Transport::set_sbx_master`] / [`Transport::get_sbx_master`]).
 //!
-//! # Framings
-//!
-//! [`Framing::HidReport`] is the default and the only one that works;
-//! [`Framing::VendorTriple`] and [`Framing::KsProperty`] are superseded
-//! layouts kept only so the reconstruction stays inspectable.
-//!
 //! Set `SBX_E5_DRY_RUN=1` (or pass `--dry-run`) to print packets instead of
 //! sending them.
 
 use crate::proto::{Feature, PID_E5, VID_CREATIVE};
 use crate::{Error, Result};
 use std::time::Duration;
-
-/// Vendor interface (`MI_00`), used only by the superseded framings.
-const VENDOR_INTERFACE: u8 = 0;
 
 /// HID interface the control transfers address (`wIndex = 3`).
 pub const HID_INTERFACE: u8 = 3;
@@ -114,11 +105,6 @@ pub const fn selector_of(id: u8) -> u8 {
     id << 1
 }
 
-/// Bass level, `0x32`.
-pub const SEL_BASS: u8 = selector_of(id::BASS_LEVEL);
-/// Surround level, `0x02`.
-pub const SEL_SURROUND: u8 = selector_of(id::SURROUND_LEVEL);
-
 /// Map a `(Feature, param)` pair to its **raw** parameter id. This is the id
 /// the `0x26` read path addresses; [`selector`] shifts it left one bit for
 /// the write path.
@@ -177,35 +163,10 @@ pub fn selector(feature: Feature, param: u32) -> Option<u8> {
     id_of(feature, param).map(selector_of)
 }
 
-/// Candidate wire layouts.
-///
-/// Selecting a different variant changes only how a triple is serialized,
-/// never how callers address parameters.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum Framing {
-    /// The real thing: opcode `0x20`, one selector byte, and a big-endian
-    /// `f32`, zero-padded to 64 bytes.
-    #[default]
-    HidReport,
-
-    /// Superseded: `[feature: u32le][param: u32le][value: u32le]` as a
-    /// vendor interface request. Does not work; kept only so the
-    /// reconstruction stays inspectable.
-    VendorTriple,
-
-    /// Superseded: a `KSPROPERTY` buffer -- 16-byte property-set GUID, a
-    /// 4-byte `Id`, a 4-byte `Flags` (1 = GET, 2 = SET), then an 8-byte
-    /// payload. Does not work.
-    KsProperty,
-}
-
-/// `KSPROPERTY.Flags` values used by the Windows stack.
-const KS_FLAG_SET: u32 = 2;
-
-/// Vendor request code for the superseded [`Framing::VendorTriple`] path.
-const REQ_SET_PARAM: u8 = 0x03;
-
 /// How a parameter value is encoded on the wire.
+///
+/// Booleans ride the same big-endian float field as everything else, as
+/// `0.0` / `1.0`.
 #[derive(Debug, Clone, Copy)]
 pub enum Value {
     Float(f32),
@@ -213,15 +174,7 @@ pub enum Value {
 }
 
 impl Value {
-    fn to_le_bytes(self) -> [u8; 4] {
-        match self {
-            Value::Float(v) => v.to_le_bytes(),
-            Value::Bool(v) => u32::from(v).to_le_bytes(),
-        }
-    }
-
-    /// The `f32` this value carries on the HID path, where booleans ride the
-    /// same float field as `0.0` / `1.0`.
+    /// The `f32` this value carries on the wire.
     fn as_f32(self) -> f32 {
         match self {
             Value::Float(v) => v,
@@ -333,75 +286,32 @@ pub fn decode_get_param_response(buf: &[u8]) -> Option<(u8, f32)> {
     Some((id, value))
 }
 
-/// Serialize one parameter write into its on-the-wire payload.
+/// Serialize one parameter write into its on-the-wire report.
 ///
-/// Kept free-standing (and public to the crate) so it can be unit-tested
-/// without a device present. Fails for [`Framing::HidReport`] when the
-/// parameter has no selector.
-pub fn encode(framing: Framing, feature: Feature, param: u32, value: Value) -> Result<Vec<u8>> {
-    match framing {
-        Framing::HidReport => {
-            let sel = selector(feature, param).ok_or(Error::Unsupported { feature, param })?;
-            Ok(encode_set_param(sel, value.as_f32()).to_vec())
-        }
-        Framing::VendorTriple => {
-            let mut buf = Vec::with_capacity(12);
-            buf.extend_from_slice(&(feature as u32).to_le_bytes());
-            buf.extend_from_slice(&param.to_le_bytes());
-            buf.extend_from_slice(&value.to_le_bytes());
-            Ok(buf)
-        }
-        Framing::KsProperty => {
-            // 16-byte property-set GUID. The real GUID still has to be
-            // lifted out of KsMalcCtl.DLL; zeroed here so the layout is
-            // testable without pretending we know the value.
-            let mut buf = Vec::with_capacity(32);
-            buf.extend_from_slice(&[0u8; 16]);
-            buf.extend_from_slice(&param.to_le_bytes()); // Id
-            buf.extend_from_slice(&KS_FLAG_SET.to_le_bytes()); // Flags
-            buf.extend_from_slice(&(feature as u32).to_le_bytes());
-            buf.extend_from_slice(&value.to_le_bytes());
-            Ok(buf)
-        }
-    }
+/// Kept free-standing so it can be unit-tested without a device present.
+/// Fails when the parameter has no selector.
+pub fn encode(feature: Feature, param: u32, value: Value) -> Result<[u8; REPORT_LEN]> {
+    let sel = selector(feature, param).ok_or(Error::Unsupported { feature, param })?;
+    Ok(encode_set_param(sel, value.as_f32()))
 }
 
-/// An open handle to the device's vendor control interface.
+/// An open handle to the device's HID control interface.
 pub struct Transport {
     handle: Option<rusb::DeviceHandle<rusb::GlobalContext>>,
     dry_run: bool,
-    framing: Framing,
-    /// Interface currently claimed, so `Drop` releases the right one.
-    claimed: u8,
-    /// Send a `0x26` commit after each value write, as Windows does.
-    commit: bool,
-}
-
-impl Framing {
-    /// The USB interface this layout addresses.
-    fn interface(self) -> u8 {
-        match self {
-            Framing::HidReport => HID_INTERFACE,
-            Framing::VendorTriple | Framing::KsProperty => VENDOR_INTERFACE,
-        }
-    }
 }
 
 impl Transport {
-    /// Open the first E5 found, claiming its vendor interface.
+    /// Open the first E5 found, claiming its HID control interface.
     ///
     /// If `dry_run` is set -- explicitly, or via `SBX_E5_DRY_RUN` -- no
     /// device is opened and packets are printed instead of sent.
     pub fn open(dry_run: bool) -> Result<Self> {
         let dry_run = dry_run || std::env::var_os("SBX_E5_DRY_RUN").is_some();
-        let framing = Framing::default();
         if dry_run {
             return Ok(Self {
                 handle: None,
                 dry_run,
-                framing,
-                claimed: framing.interface(),
-                commit: true,
             });
         }
 
@@ -411,35 +321,12 @@ impl Transport {
         // snd-usb-audio binds the audio interfaces; detaching only the
         // control interface leaves playback running.
         let _ = handle.set_auto_detach_kernel_driver(true);
-        let claimed = framing.interface();
-        handle.claim_interface(claimed)?;
+        handle.claim_interface(HID_INTERFACE)?;
 
         Ok(Self {
             handle: Some(handle),
             dry_run,
-            framing,
-            claimed,
-            commit: true,
         })
-    }
-
-    /// Enable or disable the `0x26` commit that follows each value write.
-    pub fn set_commit(&mut self, on: bool) {
-        self.commit = on;
-    }
-
-    /// Select a different wire layout, re-claiming the interface it uses.
-    pub fn with_framing(mut self, framing: Framing) -> Result<Self> {
-        let want = framing.interface();
-        if want != self.claimed
-            && let Some(h) = self.handle.as_mut()
-        {
-            let _ = h.release_interface(self.claimed);
-            h.claim_interface(want)?;
-        }
-        self.claimed = want;
-        self.framing = framing;
-        Ok(self)
     }
 
     /// True if this transport only prints packets.
@@ -447,82 +334,45 @@ impl Transport {
         self.dry_run
     }
 
-    /// Build and send one parameter write.
+    /// Build and send one parameter write, followed by its commit.
     fn send(&mut self, feature: Feature, param: u32, value: Value) -> Result<()> {
-        let payload = encode(self.framing, feature, param, value)?;
+        let id = id_of(feature, param).ok_or(Error::Unsupported { feature, param })?;
+        let payload = encode_set_param(selector_of(id), value.as_f32());
 
         if self.dry_run {
             println!(
-                "SET {:?} feature=0x{:08X} param={} value={:?}\n    {:02X?}",
-                self.framing, feature as u32, param, value, payload
+                "SET feature=0x{:08X} param={} value={:?}\n    {:02X?}",
+                feature as u32, param, value, payload
             );
-        } else {
-            self.write_raw(&payload)?;
         }
+        self.write_raw(&payload)?;
 
         // Mirror what Windows does: every value write is followed by a
-        // commit for the same id. Bass lands without it, so it may be
-        // redundant -- `commit(false)` turns it off for A/B testing.
-        if self.commit && self.framing == Framing::HidReport {
-            let sel = selector(feature, param).ok_or(Error::Unsupported { feature, param })?;
-            let r = encode_commit(sel >> 1);
-            if self.dry_run {
-                println!("    commit {:02X?}", &r[..4]);
-            } else {
-                self.write_raw(&r)?;
-            }
+        // commit for the same id.
+        let commit = encode_commit(id);
+        if self.dry_run {
+            println!("    commit {:02X?}", &commit[..4]);
         }
-        Ok(())
+        self.write_raw(&commit)
     }
 
     /// Send an already-encoded report over the control pipe.
     fn write_raw(&mut self, payload: &[u8]) -> Result<()> {
         if self.dry_run {
-            println!("RAW {:02X?}", payload);
+            println!("RAW {payload:02X?}");
             return Ok(());
         }
 
         let handle = self.handle.as_mut().ok_or(Error::DeviceNotFound)?;
-        match self.framing {
-            Framing::HidReport => {
-                handle.write_control(
-                    REQ_TYPE_SET,
-                    HID_SET_REPORT,
-                    OUT_REPORT,
-                    u16::from(HID_INTERFACE),
-                    payload,
-                    TIMEOUT,
-                )?;
-            }
-            Framing::VendorTriple | Framing::KsProperty => {
-                let request_type = rusb::request_type(
-                    rusb::Direction::Out,
-                    rusb::RequestType::Vendor,
-                    rusb::Recipient::Interface,
-                );
-                handle.write_control(
-                    request_type,
-                    REQ_SET_PARAM,
-                    0,
-                    u16::from(VENDOR_INTERFACE),
-                    payload,
-                    TIMEOUT,
-                )?;
-            }
-        }
+        handle.write_control(
+            REQ_TYPE_SET,
+            HID_SET_REPORT,
+            OUT_REPORT,
+            u16::from(HID_INTERFACE),
+            payload,
+            TIMEOUT,
+        )?;
         Ok(())
-    }
-
-    /// Send a `0x26` commit report for `id`.
-    pub fn send_commit(&mut self, id: u8) -> Result<()> {
-        let r = encode_commit(id);
-        self.write_raw(&r)
-    }
-
-    /// Send the `0x23` master/keepalive report.
-    pub fn send_master(&mut self) -> Result<()> {
-        let r = encode_master();
-        self.write_raw(&r)
     }
 
     /// Write a float-typed parameter.
@@ -642,7 +492,7 @@ impl Transport {
 impl Drop for Transport {
     fn drop(&mut self) {
         if let Some(h) = self.handle.as_mut() {
-            let _ = h.release_interface(self.claimed);
+            let _ = h.release_interface(HID_INTERFACE);
         }
     }
 }
@@ -712,6 +562,11 @@ mod tests {
     fn prefix(buf: &[u8], n: usize) -> String {
         buf[..n].iter().map(|b| format!("{b:02x}")).collect()
     }
+
+    /// Bass level, `0x32`.
+    const SEL_BASS: u8 = selector_of(id::BASS_LEVEL);
+    /// Surround level, `0x02`.
+    const SEL_SURROUND: u8 = selector_of(id::SURROUND_LEVEL);
 
     #[test]
     fn set_param_matches_captured_vectors() {
@@ -800,9 +655,8 @@ mod tests {
     }
 
     #[test]
-    fn hid_framing_routes_bass_and_surround_to_their_selectors() {
+    fn encode_routes_effects_to_their_selectors() {
         let bass = encode(
-            Framing::HidReport,
             Feature::EffectsXBass,
             crate::proto::XBass::Strength as u32,
             Value::Float(0.5),
@@ -811,32 +665,26 @@ mod tests {
         assert_eq!(bass[7], SEL_BASS);
 
         let surround = encode(
-            Framing::HidReport,
             Feature::EffectsSimpleSurround,
             crate::proto::SimpleSurround::Level as u32,
             Value::Float(0.5),
         )
         .unwrap();
         assert_eq!(surround[7], SEL_SURROUND);
-    }
 
-    #[test]
-    fn crystalizer_encodes_to_its_selector() {
-        let buf = encode(
-            Framing::HidReport,
+        let crystalizer = encode(
             Feature::EffectsCrystalizer,
             crate::proto::Crystalizer::Level as u32,
             Value::Float(0.5),
         )
         .unwrap();
-        assert_eq!(buf[7], 0x10);
+        assert_eq!(crystalizer[7], 0x10);
     }
 
     #[test]
     fn parameters_with_no_id_are_rejected_not_guessed() {
         // XBass Freq_Hz has no id, so there is no selector to build.
         let e = encode(
-            Framing::HidReport,
             Feature::EffectsXBass,
             crate::proto::XBass::FreqHz as u32,
             Value::Float(80.0),
@@ -844,50 +692,24 @@ mod tests {
         assert!(matches!(e, Err(Error::Unsupported { .. })));
     }
 
+    /// Booleans ride the same big-endian float field as levels, as 1.0 / 0.0.
     #[test]
-    fn vendor_triple_layout_is_stable() {
-        // SBX bass strength = 0.3, the value Creative's own Default.xml ships.
-        let buf = encode(
-            Framing::VendorTriple,
-            Feature::EffectsXBass,
-            crate::proto::XBass::Strength as u32,
-            Value::Float(0.3),
-        )
-        .unwrap();
-        assert_eq!(buf.len(), 12);
-        // feature 0x10000020, little endian
-        assert_eq!(&buf[0..4], &[0x20, 0x00, 0x00, 0x10]);
-        // param 1
-        assert_eq!(&buf[4..8], &[0x01, 0x00, 0x00, 0x00]);
-        // 0.3f32
-        assert_eq!(&buf[8..12], &0.3f32.to_le_bytes());
-    }
-
-    #[test]
-    fn bools_encode_as_u32() {
-        let buf = encode(
-            Framing::VendorTriple,
+    fn bools_encode_as_floats() {
+        let on = encode(
             Feature::EffectsXBass,
             crate::proto::XBass::Enable as u32,
             Value::Bool(true),
         )
         .unwrap();
-        assert_eq!(&buf[8..12], &[0x01, 0x00, 0x00, 0x00]);
-    }
+        assert_eq!(&on[10..14], &1.0f32.to_be_bytes());
 
-    #[test]
-    fn ks_property_buffer_is_32_bytes() {
-        let buf = encode(
-            Framing::KsProperty,
-            Feature::EffectsGraphicEQ,
-            crate::proto::GraphicEq::Band0Gain as u32,
-            Value::Float(0.0),
+        let off = encode(
+            Feature::EffectsXBass,
+            crate::proto::XBass::Enable as u32,
+            Value::Bool(false),
         )
         .unwrap();
-        // Matches the 0x20-byte buffer seen at KSUSBSPI32.dll.c:67441.
-        assert_eq!(buf.len(), 32);
-        // Flags field is SET.
-        assert_eq!(&buf[20..24], &KS_FLAG_SET.to_le_bytes());
+        assert_eq!(&off[10..14], &0.0f32.to_be_bytes());
     }
 
     #[test]
