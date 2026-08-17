@@ -24,14 +24,23 @@ All three must be clean. Do not report work as complete otherwise.
 dated entry (`YYYY-MM-DD`) under the current version. Add the entry in the
 same change that makes the code change, not afterwards.
 
+**`CHANGELOG.md` is for a non-technical audience.** Write what changed, not
+how — no file paths, struct/function names, byte layouts, crate names, or
+implementation detail. "Bass and surround can now be switched on and off"
+rather than "added `set_bass_enabled`/`selector_with_confidence` to
+`transport.rs`". If an entry needs a code reference to make sense, it
+belongs in the commit message or a doc comment, not here.
+
 ## Architecture
 
 ```
 src/proto.rs      generated protocol constants  -- DO NOT EDIT BY HAND
-src/transport.rs  USB framing (unverified) + dry-run
+src/transport.rs  HID wire framing + dry-run
 src/lib.rs        SoundBlasterE5 API surface
 src/bin/sbx-e5.rs clap CLI
-reverse/          extracted Windows driver, decompiled sources, generator
+src/tui.rs        interactive UI (no subcommand)
+reverse/          extracted Windows driver, decompiled sources, generator,
+                   and the USBPcap capture that resolved the wire format
 ```
 
 `src/proto.rs` is generated. To change it, edit the generator and regenerate:
@@ -45,30 +54,29 @@ The source of truth is `reverse/enums/ctsndcr_enums.txt`, extracted from the
 
 ## The one thing to be careful about
 
-**The USB wire framing in `src/transport.rs` is NOT verified against
-hardware.** The parameter model is exact (typed metadata), but how a
-`(Feature, param, value)` triple becomes bytes is reconstructed.
+**Only bass is confirmed on real hardware.** The wire format itself —
+opcode, header bytes, big-endian `f32` — comes from a USBPcap capture of
+`KsUSBaud.sys` and is not in question. What's still open is the *selector
+table*: each parameter's one-byte id is derived from the driver's
+`id << 1` rule plus the id table published for the Sound Blaster G6 (same
+vendor and driver family, a different device), not captured from an E5.
+`sbx-e5 selectors` shows which entries are `Captured` versus `Derived`.
 
-Windows does not use USB vendor requests from userspace — it sets Kernel
-Streaming properties (`IOCTL_KS_PROPERTY`, `0x2F0003`) and `KsUSBaud.sys`
-translates them. We must speak whatever that driver emits.
+Do not describe a `Derived` selector as confirmed. When a capture resolves
+one, move it to `Captured` in `transport::selector_with_confidence` and say
+so in the changelog. See the README's protocol section and TODO list for
+what's still open (reading device state, SBX master, profile loading).
 
-Do not describe the transport as working, tested, or confirmed. Keep
-candidate layouts behind the `transport::Framing` enum rather than editing
-call sites. A `usbmon`/Wireshark capture from Windows would resolve this.
-
-## Testing without hardware
-
-No E5 is currently available for testing. Everything must stay exercisable
-via dry-run:
+## Testing
 
 ```sh
 cargo run -- --dry-run bass 0.3
 SBX_E5_DRY_RUN=1 cargo run -- treble -4.5
 ```
 
-Encoding is unit-tested in `src/transport.rs` (`mod tests`) with no device.
-Prefer adding tests there over manual verification.
+Encoding is unit-tested in `src/transport.rs` (`mod tests`) against the
+captured test vectors in `reverse/e5-control-protocol.md` — no
+device needed. Prefer adding tests there over manual verification.
 
 Error paths must fail cleanly with a message and exit 1 — never panic when
 no device is present.

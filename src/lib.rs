@@ -13,6 +13,7 @@
 
 pub mod proto;
 pub mod transport;
+pub mod tui;
 
 use proto::{Crystalizer, DialogPlus, Feature, SimpleSurround, SmartVolume, XBass};
 use transport::Transport;
@@ -28,6 +29,17 @@ pub enum Error {
     Usb(rusb::Error),
     /// A level argument was outside `0.0..=1.0`.
     OutOfRange(f32),
+    /// The parameter has no wire encoding yet: its selector byte has not been
+    /// observed in a capture, and guessing one could set something else.
+    Unsupported { feature: Feature, param: u32 },
+    /// Terminal I/O failed while running the interactive UI.
+    Io(std::io::Error),
+}
+
+impl From<std::io::Error> for Error {
+    fn from(e: std::io::Error) -> Self {
+        Error::Io(e)
+    }
 }
 
 impl std::fmt::Display for Error {
@@ -40,6 +52,12 @@ impl std::fmt::Display for Error {
             ),
             Error::Usb(e) => write!(f, "usb error: {e}"),
             Error::OutOfRange(v) => write!(f, "level {v} outside 0.0..=1.0"),
+            Error::Io(e) => write!(f, "terminal error: {e}"),
+            Error::Unsupported { feature, param } => write!(
+                f,
+                "{feature:?} param {param} has no id in the selector table \
+                 (see `sbx-e5 selectors` and reverse/e5-control-protocol.md)"
+            ),
         }
     }
 }
@@ -91,9 +109,35 @@ impl SoundBlasterE5 {
         self.transport.set_bool(feature, param, on)
     }
 
+    /// Set any normalized level by `(feature, param)`.
+    ///
+    /// The generic form behind the named setters; the TUI drives its rows
+    /// through this rather than matching on every effect.
+    pub fn set_level_raw(&mut self, feature: Feature, param: u32, level: f32) -> Result<()> {
+        self.set_level(feature, param, level)
+    }
+
+    /// Set any boolean parameter by `(feature, param)`.
+    pub fn set_enable_raw(&mut self, feature: Feature, param: u32, on: bool) -> Result<()> {
+        self.set_enable(feature, param, on)
+    }
+
+    /// True when `feature`/`param` has a captured wire encoding.
+    ///
+    /// The Windows capture only pinned down the value path for bass and
+    /// surround. Callers use this to skip an optional write (an enable
+    /// toggle, say) rather than fail the whole command.
+    pub fn supports(&self, feature: Feature, param: u32) -> bool {
+        transport::selector(feature, param).is_some()
+    }
+
     // ---- SBX Bass -------------------------------------------------------
 
     /// Enable or disable SBX Bass.
+    ///
+    /// Not captured: the enable toggle's selector byte is unknown, so this
+    /// currently returns [`Error::Unsupported`]. Setting a level with
+    /// [`Self::set_bass`] is the confirmed path.
     pub fn set_bass_enabled(&mut self, on: bool) -> Result<()> {
         self.set_enable(Feature::EffectsXBass, XBass::Enable as u32, on)
     }
@@ -143,6 +187,11 @@ impl SoundBlasterE5 {
         )
     }
 
+    /// Enable or disable SBX Dialog Plus.
+    pub fn set_dialog_plus_enabled(&mut self, on: bool) -> Result<()> {
+        self.set_enable(Feature::EffectsDialogPlus, DialogPlus::Enable as u32, on)
+    }
+
     /// Set Dialog Plus strength, `0.0..=1.0`.
     pub fn set_dialog_plus(&mut self, level: f32) -> Result<()> {
         self.set_level(
@@ -150,6 +199,11 @@ impl SoundBlasterE5 {
             DialogPlus::Strength as u32,
             level,
         )
+    }
+
+    /// Enable or disable SBX Smart Volume.
+    pub fn set_smart_volume_enabled(&mut self, on: bool) -> Result<()> {
+        self.set_enable(Feature::EffectsSmartVolume, SmartVolume::Enable as u32, on)
     }
 
     /// Set Smart Volume strength, `0.0..=1.0`.
@@ -162,6 +216,13 @@ impl SoundBlasterE5 {
     }
 
     /// Master switch for the whole SBX suite.
+    ///
+    /// **Not yet working.** The master toggle does not travel as a `0x20`
+    /// parameter write, so it has no entry in the selector table and this
+    /// returns [`Error::Unsupported`]. In the capture it corresponds to the
+    /// unexplained `0x23` report (`23 27 01 ...`); on the G6 it is a wholly
+    /// separate `0x5a 0x26` command family that the E5 does not appear to
+    /// use. Resolving it needs a capture of the SBX master button alone.
     pub fn set_sbx_master(&mut self, on: bool) -> Result<()> {
         self.set_enable(
             Feature::EfxMasterControl,
