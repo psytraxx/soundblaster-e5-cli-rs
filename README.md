@@ -127,5 +127,53 @@ cargo test      # framing/encoding unit tests, no hardware needed
 ## TODO
 
 - **Profile loading.** Creative ships several stock profiles (see
-  `reverse/profiles/E5/Default.xml`); there is no way yet to load one as a
-  single operation instead of setting each parameter by hand.
+  `reverse/profiles/E5/`, seven of them); there is no way yet to load one as
+  a single operation instead of setting each parameter by hand.
+
+### Unimplemented features
+
+Candidates found by surveying `reverse/enums/ctsndcr_enums.txt`, Creative's
+stock profiles, and the decompiled driver. None are implemented; each needs
+a USB capture of the Windows panel exercising that control to pin down its
+selector byte, the same way bass and the SBX master switch were resolved.
+
+The microphone side of the device is entirely unimplemented. Creative's own
+E5 profiles configure all six of these, so they are real controls on this
+hardware, not driver-family leftovers:
+
+- **Mic noise reduction** — shipped *enabled* in every stock profile; the
+  driver carries matching `NoiseReductionState`/`NoiseReductionLevel`
+  properties.
+- **Mic echo cancellation (AEC)** — present in every profile.
+- **Mic smart volume** — auto-leveling, profiles carry a real level (`0.74`).
+- **VoiceFX** — voice presets (pitch/formant), nine tunable parameters plus
+  preset slots.
+- **Mic EQ** — eight-band parametric, per-band level/frequency/width.
+
+Preset selection for VoiceFX and Mic EQ may not use the `0x20` float path —
+an index/enum probably needs a different report shape.
+
+Device-hardware features, plausible but with weaker corroboration:
+
+- **LED control** — on/off, mode, intensity, pulsation. The driver sets an
+  `XoutLedState` at init/mute/active transitions with small integers; what
+  each value does needs checking against the physical LED.
+- **USB power overdrive** — enable plus off/on current limits. Registered as
+  a real subdevice by name in the driver's device table.
+- **Device I/O configuration** — line-out and mic configuration, S/PDIF
+  routing, jack detection, and headphone impedance selection.
+- **Direct monitoring** — per-input enables with separate mic levels, for
+  zero-latency monitoring.
+- **Bluetooth auto-connect** — one on/off property in the driver.
+- **Battery level and status** — the one feature with no corroboration in
+  any decompiled binary; likely handled by a companion app or a different
+  transport, so treat it as unproven.
+
+Not worth pursuing: Dolby/DTS decode and encode, EAX/EAX3, CMSS3D, reverb
+and pitch shift, speaker calibration, bass management, karaoke, and mic
+array beamforming. These belong to other Creative products that share this
+driver; the E5 has no hardware path for them.
+
+`FUN_0049179a` in `reverse/decompiled/KsUSBaud_x86.sys.c` is the E5's own
+device constructor, and the handler table it fills in is the best available
+answer to which features this device actually implements.
