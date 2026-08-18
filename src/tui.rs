@@ -18,7 +18,7 @@ use ratatui::backend::CrosstermBackend;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, Gauge, Paragraph};
+use ratatui::widgets::{Block, Borders, Paragraph};
 use tui_slider::{Slider, SliderOrientation, SliderState};
 
 use crate::proto::{
@@ -27,19 +27,27 @@ use crate::proto::{
 use crate::{Result, SoundBlasterE5};
 
 /// What a row writes when it changes.
+///
+/// Each variant carries both halves of a control, because every row draws its
+/// on/off switch and its value on the same line -- an effect is one thing to
+/// the user, not two.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Control {
-    /// A normalized `0.0..=1.0` level.
-    Level { feature: Feature, param: u32 },
-    /// An on/off toggle.
-    Toggle { feature: Feature, param: u32 },
-    /// All ten graphic-EQ bands, drawn as their own panel below the row
-    /// list rather than inline. Left/right move a cursor between bands.
-    EqBands,
+    /// An effect: an enable switch plus a normalized `0.0..=1.0` level.
+    Effect {
+        feature: Feature,
+        enable: u32,
+        level: u32,
+    },
     /// The SBX master switch. Behaves as an on/off switch everywhere the UI
     /// is concerned, but has no `0x20` selector: it rides its own `0x23`
-    /// opcode -- see [`App::write_sbx_master`].
+    /// opcode -- see [`SoundBlasterE5::set_sbx_master`].
     SbxMaster,
+    /// The graphic EQ: an enable switch plus ten band gains. Drawn as the
+    /// panel below the row list rather than as a line in it, so selecting
+    /// this row highlights the panel. Left/right move a cursor between
+    /// bands; `+`/`-` change the band under the cursor.
+    Eq,
 }
 
 /// Center frequency label for each of the ten EQ bands.
@@ -47,72 +55,48 @@ const EQ_FREQS: [&str; 10] = [
     "31Hz", "62Hz", "125Hz", "250Hz", "500Hz", "1kHz", "2kHz", "4kHz", "8kHz", "16kHz",
 ];
 
+/// Full-scale EQ band gain, in dB. Bars are drawn against +/- this.
+const EQ_SCALE_DB: f32 = 12.0;
+
 struct Row {
     label: &'static str,
     control: Control,
-    /// Current value: a level, 0/1 for a toggle, or dB for a band.
-    /// Unused when `control` is `EqBands`, which keeps its own array.
+    /// The row's on/off switch.
+    on: bool,
+    /// Normalized level, `0.0..=1.0`. Unused outside `Control::Effect`.
     value: f32,
-    /// The ten band gains, in dB. Unused outside `Control::EqBands`.
+    /// The ten band gains, in dB. Unused outside `Control::Eq`.
     bands: [f32; 10],
-    /// Which band left/right moves, when `control` is `EqBands`.
+    /// Which band left/right moves, when `control` is `Control::Eq`.
     band_cursor: usize,
 }
 
 impl Row {
-    /// True for anything the user flips on and off, however it is wired.
-    fn is_switch(&self) -> bool {
-        matches!(self.control, Control::Toggle { .. } | Control::SbxMaster)
+    /// True for a row with a level to slide, as opposed to a bare switch.
+    fn has_level(&self) -> bool {
+        matches!(self.control, Control::Effect { .. })
     }
 
-    /// Step size for one arrow-key press.
+    /// Step size for one arrow-key press on the row's level.
     fn step(&self) -> f32 {
-        match self.control {
-            Control::Toggle { .. } | Control::SbxMaster => 1.0,
-            Control::EqBands => 0.5,
-            Control::Level { .. } => 0.05,
-        }
+        0.05
     }
 
-    fn range(&self) -> (f32, f32) {
-        match self.control {
-            Control::Toggle { .. } | Control::SbxMaster => (0.0, 1.0),
-            Control::EqBands => (-12.0, 12.0),
-            Control::Level { .. } => (0.0, 1.0),
-        }
-    }
-
-    /// Position within the row's range, for the gauge.
-    fn ratio(&self) -> f64 {
-        let (lo, hi) = self.range();
-        (((self.value - lo) / (hi - lo)) as f64).clamp(0.0, 1.0)
-    }
-
-    /// True when a switch row is on. Levels ride the same field, so this is
-    /// only meaningful where [`Row::is_switch`] holds.
-    fn is_on(&self) -> bool {
-        self.value >= 0.5
-    }
-
+    /// The value shown in the right-hand column.
     fn display(&self) -> String {
         match self.control {
-            Control::Toggle { .. } | Control::SbxMaster => {
-                if self.is_on() { "on" } else { "off" }.into()
-            }
-            Control::EqBands => format!(
-                "{} {:+.1}dB",
-                EQ_FREQS[self.band_cursor], self.bands[self.band_cursor]
-            ),
-            Control::Level { .. } => format!("{:.0}%", self.value * 100.0),
+            Control::Effect { .. } => format!("{:.0}%", self.value * 100.0),
+            Control::SbxMaster | Control::Eq => if self.on { "on" } else { "off" }.into(),
         }
     }
 }
 
 /// Build a row with the EQ-only fields defaulted; only `rows()` needs those.
-fn row(label: &'static str, control: Control, value: f32) -> Row {
+fn row(label: &'static str, control: Control, on: bool, value: f32) -> Row {
     Row {
         label,
         control,
+        on,
         value,
         bands: [0.0; 10],
         band_cursor: 0,
@@ -120,91 +104,63 @@ fn row(label: &'static str, control: Control, value: f32) -> Row {
 }
 
 /// The rows the UI shows, in display order.
+///
+/// The EQ row is last because it is drawn as the panel underneath the list.
 fn rows() -> Vec<Row> {
-    /// An enable toggle followed by its level, the pairing every effect uses.
-    fn effect(
-        name: &'static str,
-        enable_label: &'static str,
-        feature: Feature,
-        enable: u32,
-        level: u32,
-        default: f32,
-    ) -> [Row; 2] {
-        [
-            row(
-                enable_label,
-                Control::Toggle {
-                    feature,
-                    param: enable,
-                },
-                1.0,
-            ),
-            row(
-                name,
-                Control::Level {
-                    feature,
-                    param: level,
-                },
-                default,
-            ),
-        ]
+    /// One effect: its enable switch and its level, on a single row.
+    fn effect(label: &'static str, feature: Feature, enable: u32, level: u32, default: f32) -> Row {
+        row(
+            label,
+            Control::Effect {
+                feature,
+                enable,
+                level,
+            },
+            true,
+            default,
+        )
     }
 
     // Replaced by the real state on startup; see `App::refresh_from_device`.
-    let mut rows = vec![row("SBX master", Control::SbxMaster, 0.0)];
-
-    rows.extend(effect(
-        "Surround",
-        "Surround on",
-        Feature::EffectsSimpleSurround,
-        SimpleSurround::Enable as u32,
-        SimpleSurround::Level as u32,
-        0.12,
-    ));
-    rows.extend(effect(
-        "Crystalizer",
-        "Crystalizer on",
-        Feature::EffectsCrystalizer,
-        Crystalizer::Enable as u32,
-        Crystalizer::Level as u32,
-        0.5,
-    ));
-    rows.extend(effect(
-        "Bass",
-        "Bass on",
-        Feature::EffectsXBass,
-        XBass::Enable as u32,
-        XBass::Strength as u32,
-        0.3,
-    ));
-    rows.extend(effect(
-        "Dialog Plus",
-        "Dialog Plus on",
-        Feature::EffectsDialogPlus,
-        DialogPlus::Enable as u32,
-        DialogPlus::Strength as u32,
-        0.5,
-    ));
-    rows.extend(effect(
-        "Smart Volume",
-        "Smart Volume on",
-        Feature::EffectsSmartVolume,
-        SmartVolume::Enable as u32,
-        SmartVolume::Strength as u32,
-        0.74,
-    ));
-
-    rows.push(row(
-        "EQ on",
-        Control::Toggle {
-            feature: Feature::EffectsGraphicEQ,
-            param: GraphicEq::Enable as u32,
-        },
-        0.0,
-    ));
-
-    rows.push(row("EQ bands", Control::EqBands, 0.0));
-    rows
+    vec![
+        row("SBX master", Control::SbxMaster, false, 0.0),
+        effect(
+            "Surround",
+            Feature::EffectsSimpleSurround,
+            SimpleSurround::Enable as u32,
+            SimpleSurround::Level as u32,
+            0.12,
+        ),
+        effect(
+            "Crystalizer",
+            Feature::EffectsCrystalizer,
+            Crystalizer::Enable as u32,
+            Crystalizer::Level as u32,
+            0.5,
+        ),
+        effect(
+            "Bass",
+            Feature::EffectsXBass,
+            XBass::Enable as u32,
+            XBass::Strength as u32,
+            0.3,
+        ),
+        effect(
+            "Dialog Plus",
+            Feature::EffectsDialogPlus,
+            DialogPlus::Enable as u32,
+            DialogPlus::Strength as u32,
+            0.5,
+        ),
+        effect(
+            "Smart Volume",
+            Feature::EffectsSmartVolume,
+            SmartVolume::Enable as u32,
+            SmartVolume::Strength as u32,
+            0.74,
+        ),
+        row("Graphic EQ", Control::Eq, false, 0.0),
+    ]
 }
 
 /// UI state.
@@ -226,46 +182,84 @@ impl App {
         }
     }
 
-    /// Apply the selected row's current value to the device.
-    fn write_selected(&mut self, dev: &mut SoundBlasterE5) {
+    /// Record the outcome of a write in the status bar.
+    fn report(&mut self, result: Result<()>, what: String) {
+        let label = self.rows[self.selected].label;
+        self.status = match result {
+            Ok(()) => what,
+            Err(e) => format!("{label}: {e}"),
+        };
+    }
+
+    /// Send the selected row's level. A no-op on rows that have none.
+    fn write_level(&mut self, dev: &mut SoundBlasterE5) {
         let row = &self.rows[self.selected];
+        let Control::Effect {
+            feature,
+            level: param,
+            ..
+        } = row.control
+        else {
+            return;
+        };
+        let result = dev.set_level_raw(feature, param, row.value);
+        let what = format!("{} = {}", row.label, row.display());
+        self.report(result, what);
+    }
+
+    /// Send the selected row's on/off switch, whichever opcode it rides.
+    fn write_switch(&mut self, dev: &mut SoundBlasterE5) {
+        let row = &self.rows[self.selected];
+        let on = row.on;
         let result = match row.control {
-            Control::Level { feature, param } => dev.set_level_raw(feature, param, row.value),
-            Control::Toggle { feature, param } => dev.set_enable_raw(feature, param, row.is_on()),
-            Control::EqBands => dev.set_eq_band(row.band_cursor as u8, row.bands[row.band_cursor]),
+            Control::Effect {
+                feature,
+                enable: param,
+                ..
+            } => dev.set_enable_raw(feature, param, on),
+            Control::Eq => {
+                dev.set_enable_raw(Feature::EffectsGraphicEQ, GraphicEq::Enable as u32, on)
+            }
             // The master switch has no `0x20` selector -- it rides its own
             // `0x23 0x23` opcode, and answers with the state it ended up in.
             Control::SbxMaster => {
-                let got = dev.set_sbx_master(row.is_on());
-                if let Ok(on) = got {
-                    self.rows[self.selected].value = f32::from(u8::from(on));
+                let got = dev.set_sbx_master(on);
+                if let Ok(reported) = got {
+                    self.rows[self.selected].on = reported;
                 }
                 got.map(|_| ())
             }
         };
 
         let row = &self.rows[self.selected];
-        self.status = match result {
-            Ok(()) => format!("{} = {}", row.label, row.display()),
-            Err(e) => format!("{}: {e}", row.label),
-        };
+        let what = format!("{} {}", row.label, if row.on { "on" } else { "off" });
+        self.report(result, what);
     }
 
-    /// Left/right on a normal row adjusts its value; on the EQ row it moves
-    /// which band is being edited (see `adjust_band`).
+    /// Send the EQ band under the cursor.
+    fn write_band(&mut self, dev: &mut SoundBlasterE5) {
+        let row = &self.rows[self.selected];
+        let band = row.band_cursor;
+        let db = row.bands[band];
+        let result = dev.set_eq_band(band as u8, db);
+        let what = format!("EQ {} {db:+.1}dB", EQ_FREQS[band]);
+        self.report(result, what);
+    }
+
+    /// Left/right adjusts the selected row's level; on the EQ row it moves
+    /// which band `+`/`-` will change.
     fn adjust(&mut self, dir: f32, dev: &mut SoundBlasterE5) {
         match self.rows[self.selected].control {
             // A switch has nothing to slide; left/right just flips it.
             Control::SbxMaster => self.toggle(dev),
-            Control::EqBands => self.move_band_cursor(dir),
-            _ => {
+            Control::Eq => self.move_band_cursor(dir),
+            Control::Effect { .. } => {
                 let row = &mut self.rows[self.selected];
-                let (lo, hi) = row.range();
                 let step = row.step();
-                row.value = (row.value + dir * step).clamp(lo, hi);
+                row.value = (row.value + dir * step).clamp(0.0, 1.0);
                 // Kill float drift so 0.05 steps land on clean values.
                 row.value = (row.value / step).round() * step;
-                self.write_selected(dev);
+                self.write_level(dev);
             }
         }
     }
@@ -277,61 +271,94 @@ impl App {
     }
 
     /// Raise or lower the EQ band under the cursor. Only meaningful on the
-    /// EQ bands row; a no-op elsewhere.
+    /// EQ row; a no-op elsewhere.
     fn adjust_band(&mut self, dir: f32, dev: &mut SoundBlasterE5) {
-        if !matches!(self.rows[self.selected].control, Control::EqBands) {
+        if !matches!(self.rows[self.selected].control, Control::Eq) {
             return;
         }
+        const STEP: f32 = 0.5;
         let row = &mut self.rows[self.selected];
-        let (lo, hi) = row.range();
-        let step = row.step();
         let v = &mut row.bands[row.band_cursor];
-        *v = (*v + dir * step).clamp(lo, hi);
-        *v = (*v / step).round() * step;
-        self.write_selected(dev);
+        *v = (*v + dir * STEP).clamp(-EQ_SCALE_DB, EQ_SCALE_DB);
+        *v = (*v / STEP).round() * STEP;
+        self.write_band(dev);
     }
 
     fn toggle(&mut self, dev: &mut SoundBlasterE5) {
-        if self.rows[self.selected].is_switch() {
-            let row = &mut self.rows[self.selected];
-            row.value = if row.is_on() { 0.0 } else { 1.0 };
-            self.write_selected(dev);
-        }
+        self.rows[self.selected].on = !self.rows[self.selected].on;
+        self.write_switch(dev);
     }
 
     /// Pull each row's live value from the device, replacing the built-in
-    /// defaults in [`rows`]. Best-effort: a row whose read fails -- dry-run,
-    /// no device, or the EQ band panel, which has no single value to read --
-    /// keeps its default and is left alone.
+    /// defaults in [`rows`]. Best-effort: a row whose read fails -- dry-run
+    /// or no device -- keeps its default and is left alone.
     fn refresh_from_device(&mut self, dev: &mut SoundBlasterE5) {
         if dev.is_dry_run() {
             self.status = "dry run: showing defaults, not device state".into();
             return;
         }
 
-        let mut read_ok = 0;
-        let mut read_err = 0;
+        let mut read_ok = 0usize;
+        let mut read_err = 0usize;
+        /// Store a read that succeeded, count either way.
+        fn tally(slot: &mut f32, got: Result<f32>, ok: &mut usize, err: &mut usize) {
+            match got {
+                Ok(v) => {
+                    *slot = v;
+                    *ok += 1;
+                }
+                Err(_) => *err += 1,
+            }
+        }
+
         for row in &mut self.rows {
             match row.control {
-                Control::Level { feature, param } | Control::Toggle { feature, param } => {
-                    match dev.get_level_raw(feature, param) {
-                        Ok(v) => {
-                            row.value = v;
-                            read_ok += 1;
-                        }
-                        Err(_) => read_err += 1,
-                    }
+                Control::Effect {
+                    feature,
+                    enable,
+                    level,
+                } => {
+                    let mut flag = f32::from(u8::from(row.on));
+                    tally(
+                        &mut flag,
+                        dev.get_level_raw(feature, enable),
+                        &mut read_ok,
+                        &mut read_err,
+                    );
+                    row.on = flag >= 0.5;
+                    tally(
+                        &mut row.value,
+                        dev.get_level_raw(feature, level),
+                        &mut read_ok,
+                        &mut read_err,
+                    );
                 }
                 Control::SbxMaster => match dev.get_sbx_master() {
                     Ok(on) => {
-                        row.value = f32::from(u8::from(on));
+                        row.on = on;
                         read_ok += 1;
                     }
                     Err(_) => read_err += 1,
                 },
-                // No single value to read: the bands are read individually
-                // and the panel keeps its own array.
-                Control::EqBands => {}
+                Control::Eq => {
+                    let mut flag = f32::from(u8::from(row.on));
+                    tally(
+                        &mut flag,
+                        dev.get_level_raw(Feature::EffectsGraphicEQ, GraphicEq::Enable as u32),
+                        &mut read_ok,
+                        &mut read_err,
+                    );
+                    row.on = flag >= 0.5;
+                    for (band, gain) in row.bands.iter_mut().enumerate() {
+                        let param = GraphicEq::Band0Gain as u32 + band as u32;
+                        tally(
+                            gain,
+                            dev.get_level_raw(Feature::EffectsGraphicEQ, param),
+                            &mut read_ok,
+                            &mut read_err,
+                        );
+                    }
+                }
             }
         }
 
@@ -431,12 +458,18 @@ fn event_loop(
 }
 
 fn draw(f: &mut ratatui::Frame, app: &App) {
+    // The row list is short and fixed, so it takes exactly the height it
+    // needs and the EQ panel absorbs whatever is left -- the EQ is the part
+    // that reads better tall.
+    let listed = app.rows.iter().filter(|r| !r.is_eq()).count() as u16;
+    let list_h = (listed + 2).min(f.area().height.saturating_sub(4));
+
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(1),
-            Constraint::Min(3),
-            Constraint::Length(EQ_PANEL_HEIGHT),
+            Constraint::Length(list_h),
+            Constraint::Min(4),
             Constraint::Length(2),
         ])
         .split(f.area());
@@ -466,11 +499,11 @@ fn draw(f: &mut ratatui::Frame, app: &App) {
         Span::styled("↑↓", Style::default().fg(Color::Cyan)),
         Span::raw(" select   "),
         Span::styled("←→", Style::default().fg(Color::Cyan)),
-        Span::raw(" adjust / pick band   "),
+        Span::raw(" level / pick band   "),
         Span::styled("+-", Style::default().fg(Color::Cyan)),
         Span::raw(" band gain   "),
         Span::styled("space", Style::default().fg(Color::Cyan)),
-        Span::raw(" toggle   "),
+        Span::raw(" on/off   "),
         Span::styled("q", Style::default().fg(Color::Cyan)),
         Span::raw(" quit"),
     ]);
@@ -478,40 +511,167 @@ fn draw(f: &mut ratatui::Frame, app: &App) {
     f.render_widget(status, chunks[3]);
 }
 
-const EQ_PANEL_HEIGHT: u16 = 9;
+impl Row {
+    fn is_eq(&self) -> bool {
+        matches!(self.control, Control::Eq)
+    }
+}
 
-/// A 10-band equalizer: one vertical `tui-slider` per band (range
-/// `-12..=12` dB, bottom-filled), with frequency labels underneath.
-fn draw_eq_panel(f: &mut ratatui::Frame, app: &App, area: Rect) {
-    let Some(eq_row) = app
-        .rows
-        .iter()
-        .find(|r| matches!(r.control, Control::EqBands))
-    else {
-        return;
+/// A horizontal bar of `width` cells filled to `ratio`, drawn as text so it
+/// has no reserved label cell to leave a gap in the middle.
+///
+/// The filled and unfilled halves are separate spans: the track has to stay
+/// dim whatever colour the fill is, or it reads as part of the bar.
+fn bar(ratio: f32, width: usize, colour: Color) -> Line<'static> {
+    let filled = (ratio.clamp(0.0, 1.0) * width as f32).round() as usize;
+    Line::from(vec![
+        Span::styled("█".repeat(filled), Style::default().fg(colour)),
+        Span::styled(
+            "░".repeat(width - filled),
+            Style::default().fg(Color::DarkGray),
+        ),
+    ])
+}
+
+/// Colours for a switch: green when on, dim when off.
+fn switch_style(on: bool, selected: bool) -> (&'static str, Style) {
+    let glyph = if on { "●" } else { "○" };
+    let colour = match (on, selected) {
+        (true, _) => Color::Green,
+        (false, true) => Color::Gray,
+        (false, false) => Color::DarkGray,
     };
-    let selected = matches!(app.rows[app.selected].control, Control::EqBands);
+    (glyph, Style::default().fg(colour))
+}
 
-    let block = Block::default().borders(Borders::ALL).title(" Graphic EQ ");
+fn draw_rows(f: &mut ratatui::Frame, app: &App, area: Rect) {
+    let block = Block::default().borders(Borders::ALL);
     let inner = block.inner(area);
     f.render_widget(block, area);
+    if inner.width < 20 || inner.height == 0 {
+        return;
+    }
+
+    // Every label gets the same column, sized to the longest one, so the
+    // switches and bars line up whatever the labels are.
+    let label_w = app
+        .rows
+        .iter()
+        .filter(|r| !r.is_eq())
+        .map(|r| r.label.len())
+        .max()
+        .unwrap_or(12) as u16
+        + 1;
+
+    let listed: Vec<(usize, &Row)> = app
+        .rows
+        .iter()
+        .enumerate()
+        .filter(|(_, r)| !r.is_eq())
+        .collect();
+
+    // One line per row; scroll so the selection stays visible.
+    let height = inner.height as usize;
+    let sel_pos = listed.iter().position(|(i, _)| *i == app.selected);
+    let first = sel_pos
+        .unwrap_or(0)
+        .saturating_sub(height.saturating_sub(1));
+
+    for (i, (idx, row)) in listed.iter().skip(first).take(height).enumerate() {
+        let y = inner.y + i as u16;
+        let line = Rect::new(inner.x, y, inner.width, 1);
+        let cols = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Length(3),
+                Constraint::Length(label_w),
+                Constraint::Min(8),
+                Constraint::Length(6),
+            ])
+            .split(line);
+
+        let selected = *idx == app.selected;
+
+        let (glyph, style) = switch_style(row.on, selected);
+        f.render_widget(Paragraph::new(format!(" {glyph}")).style(style), cols[0]);
+
+        let label_style = if selected {
+            Style::default().fg(Color::Black).bg(Color::Cyan)
+        } else if row.on {
+            Style::default()
+        } else {
+            Style::default().fg(Color::DarkGray)
+        };
+        f.render_widget(Paragraph::new(row.label).style(label_style), cols[1]);
+
+        if row.has_level() {
+            // A disabled effect keeps its level on screen, dimmed, so it is
+            // clear what it will go back to when switched on again.
+            let colour = if row.on { Color::Blue } else { Color::DarkGray };
+            f.render_widget(
+                Paragraph::new(bar(row.value, cols[2].width as usize, colour)),
+                cols[2],
+            );
+        }
+
+        let value_style = if row.on {
+            Style::default()
+        } else {
+            Style::default().fg(Color::DarkGray)
+        };
+        f.render_widget(
+            Paragraph::new(format!("{:>5}", row.display())).style(value_style),
+            cols[3],
+        );
+    }
+}
+
+/// A 10-band equalizer: one vertical `tui-slider` per band (range
+/// `-12..=12` dB, bottom-filled), with frequency labels underneath. The
+/// selected band shows its gain in place of its frequency.
+fn draw_eq_panel(f: &mut ratatui::Frame, app: &App, area: Rect) {
+    let Some(eq_row) = app.rows.iter().find(|r| r.is_eq()) else {
+        return;
+    };
+    let selected = app.rows[app.selected].is_eq();
+
+    let (glyph, switch) = switch_style(eq_row.on, selected);
+    let title = Line::from(vec![
+        Span::raw(" Graphic EQ  "),
+        Span::styled(glyph, switch),
+        Span::styled(if eq_row.on { " on " } else { " off " }, switch),
+    ]);
+    let border = if selected {
+        Style::default().fg(Color::Cyan)
+    } else {
+        Style::default()
+    };
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .border_style(border)
+        .title(title);
+    let inner = block.inner(area);
+    f.render_widget(block, area);
+
     if inner.width < 10 || inner.height < 2 {
         return;
     }
 
-    let bar_area_h = inner.height.saturating_sub(1);
-    let col_w = (inner.width / 10).max(1);
+    // Bottom line is the frequency labels; the rest is the bars.
+    let bar_h = inner.height - 1;
+    let dim = Style::default().fg(Color::DarkGray);
 
     for (band, &db) in eq_row.bands.iter().enumerate() {
-        let x = inner.x + band as u16 * col_w;
-        if x >= inner.x + inner.width {
-            break;
-        }
-        let width = col_w.min(inner.x + inner.width - x);
-        let col = Rect::new(x, inner.y, width, bar_area_h);
-
+        // Spread the bands across the full width rather than leaving the
+        // division's remainder as dead space on the right.
+        let x = inner.x + (inner.width as u32 * band as u32 / 10) as u16;
+        let next = inner.x + (inner.width as u32 * (band as u32 + 1) / 10) as u16;
+        let width = next.saturating_sub(x).max(1);
         let band_selected = selected && band == eq_row.band_cursor;
-        let colour = if band_selected {
+
+        let colour = if !eq_row.on {
+            Color::DarkGray
+        } else if band_selected {
             Color::Cyan
         } else if db > 0.0 {
             Color::Green
@@ -521,93 +681,89 @@ fn draw_eq_panel(f: &mut ratatui::Frame, app: &App, area: Rect) {
             Color::DarkGray
         };
 
-        let state = SliderState::new(db as f64, -12.0, 12.0);
+        // The whole `-12..=12` range maps onto the column, so a band at
+        // -12 dB is an empty column and one at +12 dB a full one.
+        let state = SliderState::new(db as f64, -EQ_SCALE_DB as f64, EQ_SCALE_DB as f64);
         let slider = Slider::from_state(&state)
             .orientation(SliderOrientation::Vertical)
             .filled_symbol("█")
             .empty_symbol(" ")
             .filled_color(colour)
             .show_handle(false);
-        f.render_widget(slider, col);
+        f.render_widget(slider, Rect::new(x, inner.y, width, bar_h));
 
-        let label_y = inner.y + bar_area_h;
-        let label_area = Rect::new(x, label_y, width, 1);
         let label_style = if band_selected {
             Style::default().fg(Color::Black).bg(Color::Cyan)
-        } else {
+        } else if eq_row.on {
             Style::default().fg(Color::Gray)
+        } else {
+            dim
+        };
+        let label = if band_selected {
+            format!("{db:+.1}")
+        } else {
+            EQ_FREQS[band].to_string()
         };
         f.render_widget(
-            Paragraph::new(format!("{:^w$}", EQ_FREQS[band], w = width as usize))
-                .style(label_style),
-            label_area,
+            Paragraph::new(format!("{:^w$}", label, w = width as usize)).style(label_style),
+            Rect::new(x, inner.y + bar_h, width, 1),
         );
     }
 }
 
-fn draw_rows(f: &mut ratatui::Frame, app: &App, area: Rect) {
-    let block = Block::default().borders(Borders::ALL);
-    let inner = block.inner(area);
-    f.render_widget(block, area);
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ratatui::backend::TestBackend;
 
-    // One line per row; scroll so the selection stays visible.
-    let height = inner.height as usize;
-    let first = app.selected.saturating_sub(height.saturating_sub(1));
-    let visible = app.rows.iter().enumerate().skip(first).take(height);
+    /// Render `app` at the given size and return the frame as plain text,
+    /// one line per terminal row with trailing blanks trimmed.
+    fn render(app: &App, width: u16, height: u16) -> String {
+        let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
+        terminal.draw(|f| draw(f, app)).unwrap();
+        let buf = terminal.backend().buffer().clone();
+        (0..buf.area.height)
+            .map(|y| {
+                let line: String = (0..buf.area.width).map(|x| buf[(x, y)].symbol()).collect();
+                line.trim_end().to_string()
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
 
-    for (i, (idx, row)) in visible.enumerate() {
-        let y = inner.y + i as u16;
-        let line = Rect::new(inner.x, y, inner.width, 1);
-        let cols = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([
-                Constraint::Length(16),
-                Constraint::Min(10),
-                Constraint::Length(10),
-            ])
-            .split(line);
+    /// Renders the UI without a device and writes it to `target/ui-snapshot.txt`
+    /// so the layout can be eyeballed. Not a golden test: it asserts only that
+    /// the frame is non-empty, so it never blocks a deliberate UI change.
+    #[test]
+    fn writes_ui_snapshot() {
+        let mut app = App::new(true);
+        app.status = "dry run: showing defaults, not device state".into();
 
-        let selected = idx == app.selected;
-        let label_style = if selected {
-            Style::default().fg(Color::Black).bg(Color::Cyan)
-        } else {
-            Style::default()
+        let mut out = String::new();
+        let mut shot = |title: &str, app: &App, w: u16, h: u16| {
+            out.push_str(&format!("=== {title} ({w}x{h}) ===\n"));
+            out.push_str(&render(app, w, h));
+            out.push_str("\n\n");
         };
-        f.render_widget(
-            Paragraph::new(format!(" {}", row.label)).style(label_style),
-            cols[0],
-        );
 
-        if row.is_switch() {
-            let (glyph, colour) = if row.is_on() {
-                ("[x]", Color::Green)
-            } else {
-                ("[ ]", Color::DarkGray)
-            };
-            f.render_widget(
-                Paragraph::new(glyph).style(Style::default().fg(colour)),
-                cols[1],
-            );
-        } else if matches!(row.control, Control::EqBands) {
-            f.render_widget(
-                Paragraph::new("see panel below").style(Style::default().fg(Color::DarkGray)),
-                cols[1],
-            );
-        } else {
-            let colour = if row.value >= 0.5 {
-                Color::Green
-            } else {
-                Color::Blue
-            };
-            f.render_widget(
-                Gauge::default()
-                    .ratio(row.ratio())
-                    .label("")
-                    .gauge_style(Style::default().fg(colour)),
-                cols[1],
-            );
-        }
+        shot("default, SBX master selected", &app, 80, 24);
 
-        f.render_widget(Paragraph::new(format!("{:>9}", row.display())), cols[2]);
+        // An effect switched off keeps its level on screen, dimmed.
+        app.selected = 3;
+        app.rows[3].on = false;
+        shot("Bass selected and switched off", &app, 80, 24);
+
+        // The EQ row, on, with a few bands moved off flat.
+        app.selected = app.rows.len() - 1;
+        let eq = app.rows.last_mut().unwrap();
+        eq.on = true;
+        eq.bands = [6.0, 4.5, 0.0, -3.0, -6.0, 0.0, 2.0, 5.5, 8.0, -1.5];
+        eq.band_cursor = 4;
+        shot("EQ selected, bands set", &app, 80, 24);
+
+        shot("narrow terminal", &app, 60, 20);
+
+        std::fs::write("target/ui-snapshot.txt", &out).unwrap();
+        assert!(out.contains("Sound Blaster E5"));
     }
 }

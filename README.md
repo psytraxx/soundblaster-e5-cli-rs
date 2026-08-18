@@ -30,8 +30,14 @@ Run with no arguments to open the interactive UI:
 sbx-e5
 ```
 
-Arrows select a row and adjust its value, space toggles on/off rows, and on
-the `EQ bands` row, left/right pick a band and `+`/`-` adjust its gain.
+![The interactive UI: one line per effect with its on/off switch, level bar
+and value, over a 10-band graphic equalizer](docs/ui.png)
+
+Each effect is one row: space switches it on and off, left/right move its
+level. An effect that is off keeps its level on screen, dimmed, so it is
+clear what it will go back to. On the equalizer, left/right pick a band --
+which then shows its gain in place of its frequency -- and `+`/`-` adjust
+it.
 
 Or drive it a parameter at a time:
 

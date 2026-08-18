@@ -81,6 +81,16 @@ Encoding is unit-tested in `src/transport.rs` (`mod tests`) against the
 captured test vectors in `reverse/e5-control-protocol.md` — no
 device needed. Prefer adding tests there over manual verification.
 
+The TUI renders without a device too. `cargo test writes_ui_snapshot` draws
+several states to `target/ui-snapshot.txt`. It is a dump, not a golden file
+— it asserts only that a frame rendered, so it never blocks a deliberate UI
+change.
+
+`docs/ui.png` is the README's screenshot of that same UI. It is a committed
+image with no generator kept in the tree, so a UI change makes it stale —
+retake it by hand when the layout changes visibly.
+
+
 Error paths must fail cleanly with a message and exit 1 — never panic when
 no device is present.
 

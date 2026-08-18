@@ -5,6 +5,36 @@ Dates are `YYYY-MM-DD`. See the README's TODO section for known gaps.
 
 ## [Unreleased]
 
+### 2026-08-18 — interactive UI rework
+
+#### Changed
+- The interactive terminal UI is about half as tall as it was. Each effect
+  now lives on one line — its on/off switch, its level and its value
+  together — instead of taking a separate checkbox line above the slider.
+  It fits on a short terminal without scrolling.
+- The equalizer's on/off switch moved onto the equalizer's own title, and
+  the redundant "see panel below" line is gone. The band being edited now
+  shows its gain in place of its frequency, so the reading is where you are
+  looking.
+- The equalizer grows to fill whatever height is left over, and its bands
+  now spread across the full width instead of leaving a gap on the right.
+- An effect that is switched off still shows its level, dimmed, so it is
+  clear what it will return to when switched back on.
+- The README now shows a screenshot of the interactive UI.
+
+#### Fixed
+- Longer names such as "Smart Volume on" were cut off, and the equalizer's
+  band readout was clipped mid-word. Columns are now sized to fit.
+- Level bars had a blank gap in the middle of the filled part, and the
+  unfilled part of the bar was drawn in the bar's own colour, which made it
+  almost invisible against the background. The track is now dim.
+- On a narrow terminal the top of the list scrolled out of view even when
+  there was room for it.
+- The interactive UI now reads the equalizer's band settings from the
+  device on startup, like everything else. It used to always open showing a
+  flat equalizer no matter how the device was actually set.
+
+
 ### 2026-08-17 — first working version
 
 #### Added
