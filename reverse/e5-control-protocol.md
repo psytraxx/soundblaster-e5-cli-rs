@@ -334,9 +334,9 @@ table and the driver's own property names, not from an E5 capture.
 
 ## Unimplemented features (leads)
 
-Surveyed from `enums/ctsndcr_enums.txt`, the stock profiles in
-`profiles/E5/`, and the decompiled driver. Each still needs a capture of
-the Windows panel exercising that control to pin down its selector byte.
+Surveyed from the driver's recovered constants and Creative's stock
+profiles. Each still needs a capture of the Windows panel exercising that
+control to pin down its selector byte.
 
 Microphone side (CrystalVoice) — the largest gap. Every stock E5 profile
 sets values for all of these, so they are real controls on this hardware
@@ -361,19 +361,18 @@ Device hardware, plausible but with weaker corroboration:
 | USB power overdrive | Registered by name in the driver's subdevice table, alongside known-real entries |
 | Device I/O config | Line-out/mic config, S/PDIF routing, jack detect, headphone impedance — fits the E5's actual I/O |
 | Direct monitoring | Per-input enables plus `Mic1Level`/`Mic2Level` |
-| Bluetooth auto-connect | One `BluetoothAutoConnect_isEnabled` property in `KSUSBSPI32.dll.c` |
-| Battery | **No** hits in any decompiled binary; likely a companion app or another transport |
+| Bluetooth auto-connect | One `BluetoothAutoConnect_isEnabled` property in the driver's constant table |
+| Battery | **No** hits in the driver's constants; likely a companion app or another transport |
 
 Not applicable to the E5 — these belong to other products sharing this
 driver, and the hardware has no path for them: Dolby/DTS decode and encode,
 EAX/EAX3, CMSS3D, reverb, pitch shift, speaker calibration, bass
 management, karaoke, mic-array beamforming.
 
-`FUN_0049179a` in `decompiled/KsUSBaud_x86.sys.c` is the E5's own device
-constructor, selected by a per-PID factory that gives it a 0x3500-byte
-context where sibling products get ~0x2428. The handler table it fills in
-is the best available answer to which features this device really
-implements.
+The E5's own device constructor is selected by a per-PID factory that
+gives it a larger context than sibling products get, and fills in a
+handler table -- the best available answer to which features this device
+really implements.
 
 ## Captures
 

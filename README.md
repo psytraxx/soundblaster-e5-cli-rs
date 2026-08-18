@@ -102,23 +102,27 @@ high nibble = category, low bits = a one-hot mask.
 | Smart Volume | `0x1000_0004` | `Enable=0`, `Strength=1`, `Mode=2` |
 | SBX master | `0x6000_0001` | `SBXMasterOnOff=7` |
 
-All 443 recovered constants are in `reverse/enums/ctsndcr_enums.txt`.
-Regenerate `src/proto.rs` with:
-
-```sh
-python3 reverse/gen_proto.py > src/proto.rs
-```
+All recovered constants live in `src/proto.rs`.
 
 Supported device IDs (VID `041e`): E5 `323c`, E1 `323b`, E3 `323e`,
 X7 `323a`, G5 `3243`. Only the E5 is wired up in `PID_E5`.
 
 ## Provenance
 
-Everything under `reverse/` derives from Creative's own redistributable
-Windows driver `SBE_PCDRV_L9_1_05_04.exe` (1.05.04, driver 1.14.1.5),
-downloaded from `files.creative.com` and signed by Creative Technology Ltd
-via DigiCert, plus a USBPcap capture of that driver's traffic.
-Interoperability research only; no Creative code ships in this crate.
+This is an independent, interoperability-only reimplementation. It contains
+no Creative code, no Creative binaries, and no decompiled output.
+
+The wire format was determined by capturing USB traffic to and from a device
+the author owns, using USBPcap -- the analysis and its test vectors are in
+[reverse/e5-control-protocol.md](reverse/e5-control-protocol.md), with the
+raw captures in `reverse/captures/`. Parameter identifiers are numeric
+constants read out of the driver's published metadata; constants are facts
+about a protocol, not authorship.
+
+Creative's Windows driver is Creative Technology Ltd's and is available only
+from Creative. Sound Blaster and SBX are trademarks of Creative Technology
+Ltd, used here only to say what hardware this controls. This project is not
+affiliated with, authorized by, or endorsed by Creative.
 
 ## Development
 
@@ -128,11 +132,13 @@ cargo clippy --all-targets
 cargo test      # framing/encoding unit tests, no hardware needed
 ```
 
-## TODO
+## License
 
-- **Profile loading.** Creative ships several stock profiles (see
-  `reverse/profiles/E5/`, seven of them); there is no way yet to load one as
-  a single operation instead of setting each parameter by hand.
+Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or
+[MIT license](LICENSE-MIT) at your option. This covers this project's own
+code only -- see [Provenance](#provenance) above.
+
+## TODO
 
 ### Unimplemented features
 

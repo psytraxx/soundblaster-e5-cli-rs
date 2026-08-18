@@ -5,6 +5,14 @@ Dates are `YYYY-MM-DD`. See the README's TODO section for known gaps.
 
 ## [Unreleased]
 
+### 2026-08-18 — open source release
+
+#### Changed
+- The project is now published under the MIT and Apache 2.0 licenses.
+- Reference material copied from Creative's Windows driver is no longer
+  included, along with the tooling that read it. The recordings of how the
+  device responds, and the notes describing how it is controlled, remain.
+
 ### 2026-08-18 — interactive UI rework
 
 #### Changed

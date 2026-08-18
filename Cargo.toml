@@ -2,6 +2,11 @@
 name = "sbx-e5"
 version = "0.1.0"
 edition = "2024"
+description = "Userspace control for the Creative Sound Blaster E5 DSP on Linux (bass, treble, surround, crystalizer)"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/psytraxx/soundblaster-e5-cli-rs"
+keywords = ["soundblaster", "creative", "usb", "audio", "hid"]
+categories = ["command-line-utilities", "hardware-support"]
 
 [dependencies]
 anyhow = "1.0.104"

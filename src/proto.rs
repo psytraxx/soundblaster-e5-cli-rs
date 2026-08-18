@@ -1,14 +1,11 @@
 //! Creative Sound Blaster E5 control protocol constants.
 //!
-//! AUTO-GENERATED from the .NET metadata of `Interop.CtSndCr.dll`
-//! (Sound Blaster E-Series Web Release 1.05.04, driver 1.14.1.5).
-//!
 //! The device is controlled by a `(Feature, param, value)` triple.
 //! `Feature` is a packed id: the high nibble selects a category and the
 //! low bits are a one-hot mask within it, e.g.
 //! `EffectsXBass = 0x1000_0020`.
 //!
-//! Do not edit by hand -- regenerate with `python3 reverse/gen_proto.py`.
+//! Maintained by hand.
 
 #![allow(dead_code)]
 #![allow(clippy::upper_case_acronyms)]

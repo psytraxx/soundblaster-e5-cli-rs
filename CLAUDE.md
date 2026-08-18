@@ -34,23 +34,16 @@ belongs in the commit message or a doc comment, not here.
 ## Architecture
 
 ```
-src/proto.rs      generated protocol constants  -- DO NOT EDIT BY HAND
+src/proto.rs      protocol constants -- hand-maintained
 src/transport.rs  HID wire framing + dry-run
 src/lib.rs        SoundBlasterE5 API surface
 src/bin/sbx-e5.rs clap CLI
 src/tui.rs        interactive UI (no subcommand)
-reverse/          extracted Windows driver, decompiled sources, generator,
-                   and the USBPcap capture that resolved the wire format
+reverse/          USBPcap captures and the protocol analysis they produced
 ```
 
-`src/proto.rs` is generated. To change it, edit the generator and regenerate:
-
-```sh
-python3 reverse/gen_proto.py > src/proto.rs
-```
-
-The source of truth is `reverse/enums/ctsndcr_enums.txt`, extracted from the
-.NET metadata of `Interop.CtSndCr.dll`.
+`src/proto.rs` holds the recovered protocol constants. It is maintained by
+hand; there is no generator in the tree.
 
 ## The one thing to be careful about
 
@@ -67,8 +60,8 @@ this device, but a *new* parameter taken from that same table is still a
 guess until it is either captured or verified on hardware. Say which of the
 two happened, and do not describe an untested selector as confirmed.
 
-See the README's TODO for what is still open — profile loading, and the
-microphone-side controls, which are the largest unimplemented area.
+See the README's TODO for what is still open — the microphone-side
+controls are the largest unimplemented area.
 
 ## Testing
 
