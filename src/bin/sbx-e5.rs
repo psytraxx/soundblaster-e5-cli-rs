@@ -2,7 +2,6 @@
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
-use indicatif::{ProgressBar, ProgressStyle};
 use sbx_e5::proto::{
     Crystalizer, DialogPlus, Feature, SimpleSurround, SmartVolume, SmartVolumeMode, XBass,
 };
@@ -353,16 +352,13 @@ fn main() -> Result<()> {
         }
 
         Command::Treble { gain_db } => {
-            // This writes several bands; show progress since a partial
-            // failure would leave the EQ half-applied.
+            // The gain was range-checked before the device was opened, so
+            // these writes either all land or the first one fails.
             let bands = sbx_e5::TREBLE_BANDS;
-            let bar = bar(bands.len() as u64, "treble bands");
             dev.set_eq_enabled(true)?;
             for band in bands.clone() {
                 dev.set_eq_band(band, gain_db)?;
-                bar.inc(1);
             }
-            bar.finish_and_clear();
             println!(
                 "treble = {gain_db:+} dB (EQ bands {}-{})",
                 bands.start,
@@ -466,15 +462,4 @@ fn print_selectors() {
     println!();
     println!("id  = addresses a read; sel = id << 1, addresses a write.");
     println!("All entries verified by ear on an E5.");
-}
-
-fn bar(len: u64, what: &str) -> ProgressBar {
-    let bar = ProgressBar::new(len);
-    bar.set_style(
-        ProgressStyle::with_template("{msg} [{bar:20}] {pos}/{len}")
-            .unwrap()
-            .progress_chars("=> "),
-    );
-    bar.set_message(what.to_string());
-    bar
 }

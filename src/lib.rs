@@ -19,66 +19,40 @@ use proto::{
 use transport::Transport;
 
 /// Errors from talking to the device.
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
     /// No E5 present on any USB bus.
+    #[error("no Sound Blaster E5 found (041e:323c)")]
     DeviceNotFound,
     /// The kernel refused access; usually a missing udev rule.
+    #[error("permission denied opening the E5; install the udev rule (see README)")]
     AccessDenied,
     /// Underlying USB failure.
+    #[error("usb error: {0}")]
     Usb(rusb::Error),
     /// A numeric argument was outside the range the parameter accepts:
     /// the value, then the inclusive bounds it had to fall between.
+    #[error("value {value} outside {lo}..={hi}")]
     OutOfRange { value: f32, lo: f32, hi: f32 },
     /// An EQ band index was outside `0..=9`.
+    #[error("no EQ band {0}; the equalizer has bands 0..=9")]
     NoSuchBand(u8),
     /// The parameter has no known wire encoding, and guessing a selector
     /// could set something else entirely.
+    #[error("{feature:?} param {param} has no id in the selector table (see `sbx-e5 selectors`)")]
     Unsupported { feature: Feature, param: u32 },
     /// Terminal I/O failed while running the interactive UI.
-    Io(std::io::Error),
+    #[error("terminal error: {0}")]
+    Io(#[from] std::io::Error),
     /// A read query got a response that didn't match the expected shape or
     /// echoed a different id than the one queried.
+    #[error("read query for id 0x{id:02x} got an unexpected or mismatched response")]
     UnexpectedResponse { id: u8 },
 }
 
-impl From<std::io::Error> for Error {
-    fn from(e: std::io::Error) -> Self {
-        Error::Io(e)
-    }
-}
-
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Error::DeviceNotFound => write!(f, "no Sound Blaster E5 found (041e:323c)"),
-            Error::AccessDenied => write!(
-                f,
-                "permission denied opening the E5; install the udev rule (see README)"
-            ),
-            Error::Usb(e) => write!(f, "usb error: {e}"),
-            Error::OutOfRange { value, lo, hi } => {
-                write!(f, "value {value} outside {lo}..={hi}")
-            }
-            Error::NoSuchBand(band) => {
-                write!(f, "no EQ band {band}; the equalizer has bands 0..=9")
-            }
-            Error::Io(e) => write!(f, "terminal error: {e}"),
-            Error::Unsupported { feature, param } => write!(
-                f,
-                "{feature:?} param {param} has no id in the selector table \
-                 (see `sbx-e5 selectors`)"
-            ),
-            Error::UnexpectedResponse { id } => write!(
-                f,
-                "read query for id 0x{id:02x} got an unexpected or mismatched response"
-            ),
-        }
-    }
-}
-
-impl std::error::Error for Error {}
-
+// Not `#[from]`: two `rusb` variants carry more meaning than "a USB call
+// failed", and mapping them here is what lets callers match on the cause
+// instead of string-matching a libusb message.
 impl From<rusb::Error> for Error {
     fn from(e: rusb::Error) -> Self {
         match e {

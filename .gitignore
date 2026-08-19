@@ -4,3 +4,4 @@
 # Kept locally as the provenance record; not committed.
 *.exe
 *.apk
+.DS_Store
