@@ -11,9 +11,9 @@
 //! single-byte *selector* plus a **big-endian** `f32` in `0.0..=1.0`,
 //! linear with the Windows slider percentage.
 //!
-//! The selector is `parameter_id << 1`, over the id table in [`id`]. Every
-//! parameter in that table is verified on an E5; one that is *not* in it is
-//! still a guess, so add it only with evidence -- see `CLAUDE.md`.
+//! The selector is `parameter_id << 1`, over the id table in [`id`]. A
+//! parameter that is *not* in that table is still a guess, so add one only
+//! with evidence -- see `CLAUDE.md`.
 //!
 //! # Reads
 //!
@@ -75,13 +75,18 @@ const READ_LEN: usize = 16;
 
 /// Fixed framing bytes at offsets 1..7 of every `0x20` report.
 const SET_PARAM_HDR: [u8; 6] = [0x00, 0x16, 0x0a, 0xd5, 0x02, 0x08];
-/// Fixed bytes at offsets 8..10, between the selector and the value.
+/// Fixed bytes at offsets 8..10, between the selector and the value. The
+/// `0x96` is the playback module id -- see `reverse/e5-control-protocol.md`.
 const SET_PARAM_TAIL: [u8; 2] = [0x20, 0x96];
 
 /// Device parameter ids.
 ///
 /// A read addresses one of these directly; a write uses [`selector_of`] to
-/// double it into report byte 7. Every id here is verified on an E5.
+/// double it into report byte 7.
+///
+/// Every id here is verified on an E5, with one exception noted below:
+/// [`BASS_CROSSOVER_HZ`] was read off the device in a capture but has never
+/// been written to it.
 pub mod id {
     pub const SURROUND_ENABLE: u8 = 0x00;
     pub const SURROUND_LEVEL: u8 = 0x01;
@@ -96,6 +101,9 @@ pub mod id {
     pub const EQ_PREAMP: u8 = 0x0a;
     /// EQ band 0 (31 Hz); bands run consecutively to band 9 (16 kHz).
     pub const EQ_BAND0: u8 = 0x0b;
+    /// SBX Bass crossover, in Hz -- the one id here that is *not* a
+    /// normalized `0.0..=1.0` level.
+    pub const BASS_CROSSOVER_HZ: u8 = 0x17;
     pub const BASS_ENABLE: u8 = 0x18;
     pub const BASS_LEVEL: u8 = 0x19;
 
@@ -117,6 +125,7 @@ pub mod id {
         ("eq preamp", EQ_PREAMP),
         ("bass enable", BASS_ENABLE),
         ("bass level", BASS_LEVEL),
+        ("bass crossover Hz", BASS_CROSSOVER_HZ),
     ];
 }
 
@@ -136,6 +145,7 @@ pub fn id_of(feature: Feature, param: u32) -> Option<u8> {
     let id = match (feature, param) {
         (Feature::EffectsXBass, p) if p == XBass::Strength as u32 => id::BASS_LEVEL,
         (Feature::EffectsXBass, p) if p == XBass::Enable as u32 => id::BASS_ENABLE,
+        (Feature::EffectsXBass, p) if p == XBass::FreqHz as u32 => id::BASS_CROSSOVER_HZ,
 
         (Feature::EffectsSimpleSurround, p) if p == SimpleSurround::Level as u32 => {
             id::SURROUND_LEVEL
@@ -746,13 +756,28 @@ mod tests {
 
     #[test]
     fn parameters_with_no_id_are_rejected_not_guessed() {
-        // XBass Freq_Hz has no id, so there is no selector to build.
+        // Bass management has no id in the table, so there is no selector
+        // to build and the write must be refused rather than guessed at.
         let e = encode(
-            Feature::EffectsXBass,
-            crate::proto::XBass::FreqHz as u32,
+            Feature::EffectsBassManagement,
+            crate::proto::BassManagement::CrossOverFreqHz as u32,
             Value::Float(80.0),
         );
         assert!(matches!(e, Err(Error::Unsupported { .. })));
+    }
+
+    /// The crossover is the one parameter that is not a normalized level:
+    /// it carries a frequency in Hz on the same big-endian float field.
+    #[test]
+    fn bass_crossover_encodes_hz_at_its_own_selector() {
+        let r = encode(
+            Feature::EffectsXBass,
+            crate::proto::XBass::FreqHz as u32,
+            Value::Float(80.0),
+        )
+        .unwrap();
+        assert_eq!(r[7], selector_of(0x17), "crossover selector is 0x17 << 1");
+        assert_eq!(&r[10..14], &80.0f32.to_be_bytes());
     }
 
     /// Booleans ride the same big-endian float field as levels, as 1.0 / 0.0.
@@ -903,6 +928,7 @@ mod tests {
             id::CRYSTALIZER_LEVEL,
             id::EQ_ENABLE,
             id::EQ_PREAMP,
+            id::BASS_CROSSOVER_HZ,
             id::BASS_ENABLE,
             id::BASS_LEVEL,
         ];

@@ -94,12 +94,26 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// Inclusive dB bounds accepted for an EQ band gain and for the treble
 /// shelf built on top of it.
 ///
-/// Unlike the selector table, this bound is *not* from a capture: it is the
-/// range the Windows control panel exposes on its sliders. Creative's own
-/// profiles only ever use -3..=+6, so the endpoints are unconfirmed on
-/// hardware. It is here to stop a typo sending an absurd gain, not because
-/// the device is known to reject anything outside it.
-pub const EQ_GAIN_DB: (f32, f32) = (-12.0, 12.0);
+/// Creative's own declared range for a band, recovered from the Android
+/// control app's parameter table (`reverse/android-protocol-tables.md`).
+/// Not from a capture, and Creative's stock profiles only ever use
+/// `-3..=+6`, so the endpoints are unconfirmed on hardware. The bound is
+/// here to stop a typo sending an absurd gain, not because the device is
+/// known to reject anything outside it.
+pub const EQ_GAIN_DB: (f32, f32) = (-24.0, 24.0);
+
+/// Inclusive dB bounds accepted for the EQ preamp gain.
+///
+/// Half the band range, and a separate declaration in Creative's table --
+/// the preamp scales the whole curve, so it is deliberately tighter. Same
+/// provenance and same caveat as [`EQ_GAIN_DB`].
+pub const EQ_PREAMP_GAIN_DB: (f32, f32) = (-12.0, 12.0);
+
+/// Inclusive bounds in Hz accepted for the SBX Bass crossover frequency.
+///
+/// Creative's declared range for the parameter; the device's own default
+/// sits at `80.0`. Same provenance as [`EQ_GAIN_DB`].
+pub const BASS_CROSSOVER_HZ: (f32, f32) = (10.0, 1000.0);
 
 /// The EQ bands the treble shelf drives -- the top four, matching what the
 /// Creative control panel's treble slider moves.
@@ -200,13 +214,17 @@ impl SoundBlasterE5 {
         self.set_level(Feature::EffectsXBass, XBass::Strength as u32, level)
     }
 
-    /// Set the bass crossover frequency in Hz. Stock profiles use `80.0`.
+    /// Set the bass crossover frequency in Hz. The device default is `80.0`.
     ///
-    /// The bound is a sanity check on a plausible crossover, not a captured
-    /// device limit -- this parameter has no id in the selector table yet,
-    /// so the write is rejected as [`Error::Unsupported`] regardless.
+    /// Unlike every other parameter here this one is *not* normalized: it
+    /// carries a frequency in Hz on the same big-endian float field.
+    ///
+    /// `10.0..=1000.0` is Creative's own declared range for the parameter
+    /// (`reverse/android-protocol-tables.md`). The read side is
+    /// capture-confirmed -- the device returned `80.0` for this id -- but
+    /// the write has never been exercised on hardware.
     pub fn set_bass_crossover(&mut self, hz: f32) -> Result<()> {
-        check_range(hz, 10.0, 1000.0)?;
+        check_range(hz, BASS_CROSSOVER_HZ.0, BASS_CROSSOVER_HZ.1)?;
         self.transport
             .set_float(Feature::EffectsXBass, XBass::FreqHz as u32, hz)
     }

@@ -60,8 +60,12 @@ const EQ_FREQS: [&str; 10] = [
     "31Hz", "62Hz", "125Hz", "250Hz", "500Hz", "1kHz", "2kHz", "4kHz", "8kHz", "16kHz",
 ];
 
-/// Full-scale EQ band gain, in dB. Bars are drawn against +/- this.
-const EQ_SCALE_DB: f32 = 12.0;
+/// Full-scale EQ band gain, in dB. Bars are drawn against +/- this, and
+/// it is also how far a band can be dragged here.
+///
+/// Tied to the library bound so the UI cannot render a band the CLI is
+/// allowed to set.
+const EQ_SCALE_DB: f32 = crate::EQ_GAIN_DB.1;
 
 struct Row {
     label: &'static str,
@@ -679,7 +683,8 @@ fn draw_rows(f: &mut ratatui::Frame, app: &App, area: Rect) {
 }
 
 /// A 10-band equalizer: one vertical `tui-slider` per band (range
-/// `-12..=12` dB, bottom-filled), with frequency labels underneath. The
+/// `-EQ_SCALE_DB..=EQ_SCALE_DB`, bottom-filled), with frequency labels
+/// underneath. The
 /// selected band shows its gain in place of its frequency.
 fn draw_eq_panel(f: &mut ratatui::Frame, app: &App, area: Rect) {
     let Some(eq_row) = app.rows.iter().find(|r| r.is_eq()) else {
@@ -733,8 +738,9 @@ fn draw_eq_panel(f: &mut ratatui::Frame, app: &App, area: Rect) {
             Color::DarkGray
         };
 
-        // The whole `-12..=12` range maps onto the column, so a band at
-        // -12 dB is an empty column and one at +12 dB a full one.
+        // The whole `-EQ_SCALE_DB..=EQ_SCALE_DB` range maps onto the
+        // column, so a band at the bottom is an empty column and one at
+        // the top a full one.
         let state = SliderState::new(db as f64, -EQ_SCALE_DB as f64, EQ_SCALE_DB as f64);
         let slider = Slider::from_state(&state)
             .orientation(SliderOrientation::Vertical)

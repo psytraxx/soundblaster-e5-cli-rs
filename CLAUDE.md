@@ -31,6 +31,21 @@ rather than "added `set_bass_enabled`/`id_of` to
 `transport.rs`". If an entry needs a code reference to make sense, it
 belongs in the commit message or a doc comment, not here.
 
+**Documentation states the status quo, not the history of getting there.**
+Every markdown file except `CHANGELOG.md` describes what is true now: here
+is the protocol, here is what we implement, here is what we do not support
+yet. Never narrate the investigation. No "this used to say", no "previously
+believed", no "confirmed what we suspected", no "finding 1 / finding 2", no
+references to earlier analysis passes or to what a previous document
+claimed. When new evidence changes a document, rewrite the affected part so
+it simply reads as correct — do not leave a correction notice behind. The
+history lives in git and in `CHANGELOG.md`, which is the sole exception
+because a changelog is by definition a record of change.
+
+Do keep statements about *verification status* — "read off the device but
+never written to it", "confirmed by ear", "not yet captured". Those describe
+how much we currently trust a fact, which is status quo, not history.
+
 ## Architecture
 
 ```
