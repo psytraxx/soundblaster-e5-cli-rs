@@ -5,6 +5,43 @@ Dates are `YYYY-MM-DD`. See the README's TODO section for known gaps.
 
 ## [Unreleased]
 
+### 2026-08-19 — bass crossover, and a wider EQ
+
+#### Added
+- **The bass crossover frequency can now be set.** `sbx-e5 bass 0.3
+  --crossover 90` picks the frequency below which the bass boost applies,
+  anywhere from 10 to 1000 Hz. The device's own default is 80 Hz. Until now
+  this option existed but always reported that it could not be sent.
+
+#### Fixed
+- **EQ bands accept the full range the device supports.** Any band can now
+  be set between -24 and +24 dB; previously anything beyond ±12 dB was
+  refused. The tighter ±12 dB limit was real, but it belongs to the overall
+  EQ preamp, not to the individual bands. The interactive screen's EQ
+  display follows the same wider range.
+
+#### Note
+- Nothing was ever sent incorrectly — the old limit only turned away
+  settings that would have worked.
+
+### 2026-08-19 — smart volume profiles
+
+#### Added
+- Smart Volume can now be switched between its three profiles: **normal**,
+  **loud** and **night**. Night compresses the loudest passages hardest, so
+  quiet dialogue stays audible without peaks waking the neighbours; loud
+  favours a consistently high level; normal is the even setting the device
+  ships with.
+- Pick a profile from the command line with `--mode`, or on the interactive
+  screen with the left and right arrows on the new line under Smart Volume.
+  The screen shows the profile the device is actually set to when it opens.
+
+#### Note
+- The three profile names come from Creative's own control panel. Which
+  name goes with which of the device's three settings is a very well-founded
+  reading, but it has not yet been checked by ear on real hardware — so if
+  night and loud seem swapped, that is the thing to report.
+
 ### 2026-08-18 — open source release
 
 #### Changed

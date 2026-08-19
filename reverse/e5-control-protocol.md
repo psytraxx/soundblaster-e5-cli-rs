@@ -39,7 +39,7 @@ offset  bytes                meaning
 0       20                   opcode = SET_PARAM
 1..6    00 16 0a d5 02 08    fixed framing (constant on every param write)
 7       PP                   param selector (see table)
-8..9    20 96                fixed
+8..9    20 96                fixed; the 96 is the playback module id
 10..13  <f32 big-endian>     value, 0.0 .. 1.0
 14..63  00                   zero pad
 ```
@@ -66,9 +66,9 @@ Method to extend: toggle one effect, capture, read byte 7.
 ```
 offset  bytes         meaning
 0       26            opcode
-1       01            subcommand
-2       96            scale/max = 150
-3       VV            level byte, 0..150
+1       01            item count
+2       96            module id = playback manager
+3       VV            level byte
 ```
 
 Observed pinned at `19` (25 decimal) and constant across an entire 274-packet
@@ -199,11 +199,15 @@ Query (SET_REPORT, 64 bytes, zero-padded):
 ```
 offset  bytes     meaning
 0       26        opcode = GET_PARAM
-1       01        subcommand (matches the 0x26 write shape)
-2       96        scale/max = 150
+1       01        item count (we only ever ask for one)
+2       96        module id = playback manager
 3       II        parameter id  -- RAW id, not the id<<1 write selector
 4..63   00        zero pad
 ```
+
+`0x96` is `MALCOLM_MODULE_ID_PLAYBACK_MGR`, the module a parameter belongs
+to. `0x95` is the microphone / voice-input module, `0x8F` room calibration,
+`0x80` master control. Full tables in `android-protocol-tables.md`.
 
 Response (interrupt IN, ep `0x83`, 16 bytes):
 
@@ -211,9 +215,9 @@ Response (interrupt IN, ep `0x83`, 16 bytes):
 offset  bytes              meaning
 0       00                 leading zero / status
 1       26                 echoes opcode
-2       01                 echoes subcommand
-3       96                 echoes scale
-4       ??                 (00 in every observed response)
+2       01                 item count
+3       00                 more-items flag (00 in every observed response)
+4       96                 echoes module id
 5       II                 echoes parameter id
 6..9    <f32 big-endian>   the value
 10..15  00                 pad
@@ -240,7 +244,7 @@ sane slider positions:
 | `0x06` | Smart Volume mode | `0.0` |
 | `0x07` | Crystalizer enable | `1.0` (on) |
 | `0x08` | Crystalizer level | `0.64` |
-| `0x17` | (unmapped) | `80.0` — note: not 0..1, likely a gain/dB or Hz |
+| `0x17` | Bass crossover (Hz) | `80.0` — the device default; not normalized |
 | `0x18` | Bass enable | `1.0` (on) |
 | `0x19` | Bass level | `0.5` |
 
@@ -253,10 +257,12 @@ Raw vectors:
 | `26019608` | `002601009608 3f23d70a` | Crystalizer level = 0.64 |
 | `26019605` | `002601009605 3f3d70a4` | Smart Volume level = 0.74 |
 | `26019601` | `002601009601 3df5c28f` | Surround level = 0.12 |
-| `26019617` | `002601009617 42a00000` | id 0x17 = 80.0 |
+| `26019617` | `002601009617 42a00000` | Bass crossover = 80.0 Hz |
 
-The `0x17 = 80.0` reading is the one value that is not normalized `0..1`;
-it is not in the current `id` table and its meaning is unresolved.
+The `0x17` reading is the one value that is not normalized `0..1`: it is
+the SBX Bass crossover in Hz, at its default of `80.0` (range `10..=1000`,
+step 1). The read is capture-confirmed; the *write* has never been
+exercised on hardware.
 
 ### Other status reads
 
@@ -270,10 +276,9 @@ it is not in the current `id` table and its meaning is unresolved.
 **Scope caveat:** `3f 00`, `22 00`, and `25 01`/`25 01 01` are small
 status/flag reads (likely `GetContext`/`GetFeatureInfo`-style) whose
 semantics remain undecoded — they are not the SBX master switch, which
-uses `23 24` (see above). The static-disassembly opcode guess
-(`0x8001000`, `0x50`/`0x52`) is **disproven** — real read opcodes seen so
-far are `0x26` (parameter values), `0x23` (master), and `0x3f`/`0x22`/`0x25`
-(undecoded status).
+uses `23 24` (see above). The read opcodes seen on the wire are `0x26`
+(parameter values), `0x23` (master), and `0x3f`/`0x22`/`0x25` (undecoded
+status).
 
 ### Rust read path
 
@@ -304,7 +309,7 @@ const OUT_REPORT: u16 = 0x0200; // Output report, ID 0
 const HID_IFACE:  u16 = 3;
 
 const HDR:  [u8; 6] = [0x00, 0x16, 0x0a, 0xd5, 0x02, 0x08];
-const TAIL: [u8; 2] = [0x20, 0x96];
+const TAIL: [u8; 2] = [0x20, 0x96]; // 0x96 = playback module id
 
 fn encode_set_param(param: u8, value: f32) -> [u8; 64] {
     let mut r = [0u8; 64];
@@ -324,7 +329,6 @@ fn encode_set_param(param: u8, value: f32) -> [u8; 64] {
 - Determine whether `0x26`/`0x23 27` reports are required at init or purely
   cosmetic (send only the `0x20` float, or only `0x23 23`/`0x23 24`, and
   listen).
-- Identify parameter id `0x17` (reads back `80.0`, not normalized `0..1`).
 - Decode the `0x3f`/`0x22`/`0x25` status reads (map to Get* semantics).
 
 The `id << 1` rule is settled for the implemented table: every effect in it
@@ -334,9 +338,8 @@ table and the driver's own property names, not from an E5 capture.
 
 ## Unimplemented features (leads)
 
-Surveyed from the driver's recovered constants and Creative's stock
-profiles. Each still needs a capture of the Windows panel exercising that
-control to pin down its selector byte.
+Each still needs a capture of the Windows panel exercising the control to
+pin down its selector byte on this transport.
 
 Microphone side (CrystalVoice) — the largest gap. Every stock E5 profile
 sets values for all of these, so they are real controls on this hardware
@@ -350,10 +353,13 @@ rather than driver-family leftovers:
 | VoiceFX | `voicefx` with a preset index; nine tunable params in the enums |
 | Mic EQ | `mic_eq` with a preset; per-band level/frequency/width |
 
-VoiceFX and Mic EQ *presets* are an index rather than a level, so they may
-not ride the `0x20` float path at all.
+Every one of these has a known parameter id in the voice-input module
+(`0x95`) — see `android-protocol-tables.md`. What is missing is how that
+module is addressed on this HID path; every captured write targets the
+playback module (`0x96`). VoiceFX and Mic EQ presets are bundles of
+continuous parameters, so they ride the ordinary `0x20` float path.
 
-Device hardware, plausible but with weaker corroboration:
+Device hardware:
 
 | Feature | Evidence |
 |---|---|
@@ -362,12 +368,16 @@ Device hardware, plausible but with weaker corroboration:
 | Device I/O config | Line-out/mic config, S/PDIF routing, jack detect, headphone impedance — fits the E5's actual I/O |
 | Direct monitoring | Per-input enables plus `Mic1Level`/`Mic2Level` |
 | Bluetooth auto-connect | One `BluetoothAutoConnect_isEnabled` property in the driver's constant table |
-| Battery | **No** hits in the driver's constants; likely a companion app or another transport |
+| Battery | No hits in the driver's constants, but the SoundCore command set carries `BATTERYLEVEL` and `BATTERYSTATUS`, with an E5-specific response quirk |
 
 Not applicable to the E5 — these belong to other products sharing this
 driver, and the hardware has no path for them: Dolby/DTS decode and encode,
-EAX/EAX3, CMSS3D, reverb, pitch shift, speaker calibration, bass
-management, karaoke, mic-array beamforming.
+EAX/EAX3, reverb, pitch shift, speaker calibration, bass management,
+karaoke, mic-array beamforming.
+
+Deliberately excluded: master volume and mute, speaker EQ, calibrator
+headroom and speaker configuration. Creative's own software forbids
+third-party clients from writing these.
 
 The E5's own device constructor is selected by a per-PID factory that
 gives it a larger context than sibling products get, and fills in a

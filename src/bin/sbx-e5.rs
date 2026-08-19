@@ -3,7 +3,9 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use indicatif::{ProgressBar, ProgressStyle};
-use sbx_e5::proto::{Crystalizer, DialogPlus, Feature, SimpleSurround, SmartVolume, XBass};
+use sbx_e5::proto::{
+    Crystalizer, DialogPlus, Feature, SimpleSurround, SmartVolume, SmartVolumeMode, XBass,
+};
 use sbx_e5::transport::id;
 use sbx_e5::{SoundBlasterE5, transport};
 
@@ -36,7 +38,7 @@ enum Command {
     Bass {
         #[arg(value_name = "LEVEL|on|off")]
         setting: Setting,
-        /// Crossover frequency in Hz (stock profiles use 80).
+        /// Crossover frequency in Hz, 10..=1000 (device default is 80).
         #[arg(long)]
         crossover: Option<f32>,
     },
@@ -69,6 +71,9 @@ enum Command {
     SmartVolume {
         #[arg(value_name = "LEVEL|on|off")]
         setting: Setting,
+        /// Profile to select: normal, loud, or night.
+        #[arg(long)]
+        mode: Option<SmartVolumeMode>,
     },
 
     /// Set the gain of a single graphic-EQ band.
@@ -76,7 +81,7 @@ enum Command {
         /// Band index, 0-9 (low to high).
         #[arg(long, value_parser = clap::value_parser!(u8).range(0..=9))]
         band: u8,
-        /// Gain in dB, typically -12.0 to 12.0.
+        /// Gain in dB, -24.0 to 24.0.
         #[arg(long, allow_negative_numbers = true)]
         gain: f32,
     },
@@ -154,7 +159,7 @@ impl Command {
             | Command::Surround { setting }
             | Command::Crystalizer { setting }
             | Command::DialogPlus { setting }
-            | Command::SmartVolume { setting } => setting.level(),
+            | Command::SmartVolume { setting, .. } => setting.level(),
             _ => None,
         }
     }
@@ -279,6 +284,19 @@ fn main() -> Result<()> {
             "gain {gain} dB outside {lo}..={hi}"
         );
     }
+    // `bass --crossover` writes the level first, so a bad frequency caught
+    // only by the library would leave the level already applied.
+    if let Command::Bass {
+        crossover: Some(hz),
+        ..
+    } = command
+    {
+        let (lo, hi) = sbx_e5::BASS_CROSSOVER_HZ;
+        anyhow::ensure!(
+            (lo..=hi).contains(&hz),
+            "crossover {hz} Hz outside {lo}..={hi}"
+        );
+    }
 
     match command {
         // Handled above, before the device was opened.
@@ -287,8 +305,7 @@ fn main() -> Result<()> {
         Command::Bass { setting, crossover } => {
             apply(&mut dev, &BASS, setting)?;
             if let Some(hz) = crossover {
-                // The crossover has no id in the table, so this may fail.
-                optional(dev.set_bass_crossover(hz), "bass crossover")?;
+                dev.set_bass_crossover(hz)?;
             }
         }
 
@@ -313,7 +330,14 @@ fn main() -> Result<()> {
         Command::Surround { setting } => apply(&mut dev, &SURROUND, setting)?,
         Command::Crystalizer { setting } => apply(&mut dev, &CRYSTALIZER, setting)?,
         Command::DialogPlus { setting } => apply(&mut dev, &DIALOG_PLUS, setting)?,
-        Command::SmartVolume { setting } => apply(&mut dev, &SMART_VOLUME, setting)?,
+        Command::SmartVolume { setting, mode } => {
+            apply(&mut dev, &SMART_VOLUME, setting)?;
+            if let Some(mode) = mode {
+                dev.set_smart_volume_mode(mode)
+                    .context("setting the smart volume profile")?;
+                println!("smart volume mode = {mode}");
+            }
+        }
 
         Command::Eq { band, gain } => {
             dev.set_eq_enabled(true)?;
@@ -328,22 +352,6 @@ fn main() -> Result<()> {
     }
 
     Ok(())
-}
-
-/// Run a write that is nice-to-have rather than the point of the command.
-///
-/// An [`sbx_e5::Error::Unsupported`] here means the parameter has no id in
-/// the table; warn and continue so the rest of the command still lands. Any
-/// other error is fatal.
-fn optional(r: sbx_e5::Result<()>, what: &str) -> Result<()> {
-    match r {
-        Ok(()) => Ok(()),
-        Err(sbx_e5::Error::Unsupported { .. }) => {
-            eprintln!("note: skipping {what} (no known wire encoding)");
-            Ok(())
-        }
-        Err(e) => Err(e.into()),
-    }
 }
 
 /// Print the parameter id/selector table.

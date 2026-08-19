@@ -52,6 +52,7 @@ sbx-e5 surround 0.12
 sbx-e5 crystalizer 0.5
 sbx-e5 dialog-plus 0.5
 sbx-e5 smart-volume 0.74
+sbx-e5 smart-volume 0.74 --mode night   # normal, loud or night
 sbx-e5 eq --band 9 --gain 6
 sbx-e5 sbx on|off              # SBX master switch
 ```
@@ -99,7 +100,7 @@ high nibble = category, low bits = a one-hot mask.
 | Surround | `0x1000_0200` | `Enable=0`, `Level=1` |
 | Crystalizer | `0x1000_0008` | `Enable=0`, `Level=1` |
 | Dialog Plus | `0x1000_0002` | `Enable=0`, `Strength=1` |
-| Smart Volume | `0x1000_0004` | `Enable=0`, `Strength=1`, `Mode=2` |
+| Smart Volume | `0x1000_0004` | `Enable=0`, `Strength=1`, `Mode=2` (`normal`/`loud`/`night`) |
 | SBX master | `0x6000_0001` | `SBXMasterOnOff=7` |
 
 All recovered constants live in `src/proto.rs`.
@@ -117,7 +118,10 @@ the author owns, using USBPcap -- the analysis and its test vectors are in
 [reverse/e5-control-protocol.md](reverse/e5-control-protocol.md), with the
 raw captures in `reverse/captures/`. Parameter identifiers are numeric
 constants read out of the driver's published metadata; constants are facts
-about a protocol, not authorship.
+about a protocol, not authorship. The same goes for the three Smart Volume
+profile names, which are the vocabulary its control panel presents to the
+user -- the values they map to are inferred, and are noted as such in
+`src/proto.rs` until hardware confirms them.
 
 Creative's Windows driver is Creative Technology Ltd's and is available only
 from Creative. Sound Blaster and SBX are trademarks of Creative Technology
@@ -144,7 +148,9 @@ code only -- see [Provenance](#provenance) above.
 
 Each needs its selector byte pinned down before it can be added. Evidence
 and leads for all of these are in
-[reverse/e5-control-protocol.md](reverse/e5-control-protocol.md).
+[reverse/e5-control-protocol.md](reverse/e5-control-protocol.md), and the
+parameter tables from Creative's own Android software are in
+[reverse/android-protocol-tables.md](reverse/android-protocol-tables.md).
 
 The microphone side of the device is entirely unimplemented, and is the
 largest gap — Creative's own E5 profiles configure every one of these:
@@ -152,11 +158,15 @@ largest gap — Creative's own E5 profiles configure every one of these:
 - **Mic noise reduction** — shipped enabled in every stock profile.
 - **Mic echo cancellation (AEC)**.
 - **Mic smart volume** — auto-leveling.
-- **VoiceFX** — voice presets (pitch/formant), nine tunable parameters.
-- **Mic EQ** — eight-band parametric, per-band level/frequency/width.
+- **VoiceFX** — three formant frequencies plus pitch, envelope, quiver and
+  contour depths. The presets in Creative's UI are bundles of those nine
+  values, so this rides the ordinary float path.
+- **Mic EQ** — eight-band parametric, per-band gain/frequency/bandwidth.
 
-Preset selection for VoiceFX and Mic EQ may need a different report shape
-than the `0x20` float path, since an index is not a level.
+Creative's parameter ids for all of the above are known. What is not known
+is how to address them over this USB path: they live in a separate "voice
+input" module, and every write captured so far targets the playback module.
+Probe that with reads before writing anything.
 
 Device-hardware features, plausible but less certain:
 
@@ -166,9 +176,14 @@ Device-hardware features, plausible but less certain:
   routing, jack detection, headphone impedance selection.
 - **Direct monitoring** — per-input enables with separate mic levels.
 - **Bluetooth auto-connect**.
-- **Battery level and status** — the least certain of these.
+- **Battery level and status**.
 
-Not worth pursuing: Dolby/DTS decode and encode, EAX/EAX3, CMSS3D, reverb
-and pitch shift, speaker calibration, bass management, karaoke, and mic
-array beamforming. These belong to other Creative products that share this
-driver; the E5 has no hardware path for them.
+Not worth pursuing: Dolby/DTS decode and encode, EAX/EAX3, reverb and pitch
+shift, speaker calibration, bass management, karaoke, and mic array
+beamforming. These belong to other Creative products that share this driver;
+the E5 has no hardware path for them.
+
+Deliberately left out: master volume and mute, speaker EQ, and speaker
+configuration. Creative's own software blocks third-party clients from
+writing these on this hardware, and the reason is plausible enough to
+respect.

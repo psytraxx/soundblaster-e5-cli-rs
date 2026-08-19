@@ -113,6 +113,79 @@ pub enum SmartVolume {
     Mode = 0x00000002,
 }
 
+/// The profile [`SmartVolume::Mode`] selects.
+///
+/// Creative's control panel calls the feature Smart Volume but names the
+/// enum after the licensed DSP behind it, `THX_DynamX_SVM_MODE`, offering
+/// exactly these three as radio buttons. The names are lifted from that
+/// binary; the `0/1/2` values follow its declaration order and every stock
+/// profile shipping `mode="0"` with Normal preselected, but have not been
+/// confirmed against hardware.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[repr(u32)]
+pub enum SmartVolumeMode {
+    /// Even loudness, the stock setting.
+    #[default]
+    Normal = 0,
+    /// Favours a consistently high level.
+    Loud = 1,
+    /// Compresses hard so quiet passages stay audible without peaks.
+    Night = 2,
+}
+
+impl SmartVolumeMode {
+    /// Every mode, in the order the control panel lists them.
+    pub const ALL: [SmartVolumeMode; 3] = [
+        SmartVolumeMode::Normal,
+        SmartVolumeMode::Loud,
+        SmartVolumeMode::Night,
+    ];
+
+    /// The lowercase name the CLI accepts and prints.
+    pub fn name(self) -> &'static str {
+        match self {
+            SmartVolumeMode::Normal => "normal",
+            SmartVolumeMode::Loud => "loud",
+            SmartVolumeMode::Night => "night",
+        }
+    }
+
+    /// The wire value written to [`SmartVolume::Mode`].
+    pub fn value(self) -> f32 {
+        self as u32 as f32
+    }
+
+    /// Recover a mode from a value read back off the device.
+    ///
+    /// Rounds, because the mode rides the same float-valued path as every
+    /// other parameter. Anything outside the known set is `None`.
+    pub fn from_value(v: f32) -> Option<Self> {
+        match v.round() as i32 {
+            0 => Some(SmartVolumeMode::Normal),
+            1 => Some(SmartVolumeMode::Loud),
+            2 => Some(SmartVolumeMode::Night),
+            _ => None,
+        }
+    }
+}
+
+impl std::fmt::Display for SmartVolumeMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.name())
+    }
+}
+
+impl std::str::FromStr for SmartVolumeMode {
+    type Err = String;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        SmartVolumeMode::ALL
+            .into_iter()
+            .find(|m| m.name() == s.to_ascii_lowercase())
+            .ok_or_else(|| format!("expected `normal`, `loud`, or `night`, got `{s}`"))
+    }
+}
+
 /// 10-band graphic EQ; treble is the upper bands.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[repr(u32)]
