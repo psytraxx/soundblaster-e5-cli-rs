@@ -105,6 +105,12 @@ a third-party client; this project leaves them alone for the same reason.
 
 ### Declared ranges
 
+These are Creative's generic figures, shared across the Sound Blaster line.
+Where the E5 reports its own range through the `23 2a` query it disagrees,
+and the device wins — see `e5-control-protocol.md`. Known conflicts: EQ band
+gain (device `±12`, not `±24`), EQ preamp (device `±6`, not `±12`), XBass
+crossover (device max `300 Hz`, not `1000`).
+
 Defaults are `min 0.0`, `max 1.0`, `step 1.0`, `default 0.0` unless listed.
 
 | Parameter | min | max | default | step |

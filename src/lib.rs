@@ -94,26 +94,25 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// Inclusive dB bounds accepted for an EQ band gain and for the treble
 /// shelf built on top of it.
 ///
-/// Creative's own declared range for a band, recovered from the Android
-/// control app's parameter table (`reverse/android-protocol-tables.md`).
-/// Not from a capture, and Creative's stock profiles only ever use
-/// `-3..=+6`, so the endpoints are unconfirmed on hardware. The bound is
-/// here to stop a typo sending an absurd gain, not because the device is
-/// known to reject anything outside it.
-pub const EQ_GAIN_DB: (f32, f32) = (-24.0, 24.0);
+/// The E5's own answer, read off the device: it reports its ranges through
+/// the `23 2a` parameter-info query, and gives `-12.0 .. 12.0` for an EQ
+/// band. Creative's cross-product Android library declares a wider
+/// `-24 .. 24` for the same parameter; the device's own report wins.
+pub const EQ_GAIN_DB: (f32, f32) = (-12.0, 12.0);
 
 /// Inclusive dB bounds accepted for the EQ preamp gain.
 ///
-/// Half the band range, and a separate declaration in Creative's table --
-/// the preamp scales the whole curve, so it is deliberately tighter. Same
-/// provenance and same caveat as [`EQ_GAIN_DB`].
-pub const EQ_PREAMP_GAIN_DB: (f32, f32) = (-12.0, 12.0);
+/// Half the band range, and separately reported by the device: `23 2a`
+/// gives `-6.0 .. 6.0` step `1.0` for the preamp. The preamp scales the
+/// whole curve, so pulling it down is what makes room for boosted bands.
+pub const EQ_PREAMP_GAIN_DB: (f32, f32) = (-6.0, 6.0);
 
 /// Inclusive bounds in Hz accepted for the SBX Bass crossover frequency.
 ///
-/// Creative's declared range for the parameter; the device's own default
-/// sits at `80.0`. Same provenance as [`EQ_GAIN_DB`].
-pub const BASS_CROSSOVER_HZ: (f32, f32) = (10.0, 1000.0);
+/// The E5 reports `10.0 .. 300.0` step `1.0` through `23 2a`, and defaults
+/// to `80.0`. Creative's Android library declares a wider `10 .. 1000` for
+/// the shared parameter; the device's own report wins.
+pub const BASS_CROSSOVER_HZ: (f32, f32) = (10.0, 300.0);
 
 /// The EQ bands the treble shelf drives -- the top four, matching what the
 /// Creative control panel's treble slider moves.
@@ -193,6 +192,16 @@ impl SoundBlasterE5 {
         self.transport.get_sbx_master()
     }
 
+    /// Send a bare `<op> <sub>` query and return the device's answer, or
+    /// `None` if nothing matching came back.
+    ///
+    /// Discovery only -- reads are non-destructive, so this is how an
+    /// unmapped subcommand gets identified without writing anything. See
+    /// `sbx-e5 probe`.
+    pub fn query_raw(&mut self, op: u8, sub: u8) -> Result<Option<[u8; 16]>> {
+        self.transport.query_raw(op, sub)
+    }
+
     /// True when `feature`/`param` has a known wire encoding.
     ///
     /// Callers use this to skip an optional write rather than fail the whole
@@ -219,8 +228,7 @@ impl SoundBlasterE5 {
     /// Unlike every other parameter here this one is *not* normalized: it
     /// carries a frequency in Hz on the same big-endian float field.
     ///
-    /// `10.0..=1000.0` is Creative's own declared range for the parameter
-    /// (`reverse/android-protocol-tables.md`). The read side is
+    /// The range is the device's own, read back off it. The read side is
     /// capture-confirmed -- the device returned `80.0` for this id -- but
     /// the write has never been exercised on hardware.
     pub fn set_bass_crossover(&mut self, hz: f32) -> Result<()> {
@@ -323,6 +331,30 @@ impl SoundBlasterE5 {
             Feature::EffectsGraphicEQ,
             proto::GraphicEq::Enable as u32,
             on,
+        )
+    }
+
+    /// Set the EQ preamp gain in dB, within [`EQ_PREAMP_GAIN_DB`].
+    ///
+    /// The preamp scales the whole curve before the bands are applied.
+    /// Pulling it down is how you make headroom for boosted bands without
+    /// clipping the DSP, so it is the companion to [`Self::set_eq_band`]
+    /// rather than an alternative to it.
+    pub fn set_eq_preamp(&mut self, gain_db: f32) -> Result<()> {
+        let (lo, hi) = EQ_PREAMP_GAIN_DB;
+        check_range(gain_db, lo, hi)?;
+        self.transport.set_float(
+            Feature::EffectsGraphicEQ,
+            proto::GraphicEq::PreampGain as u32,
+            gain_db,
+        )
+    }
+
+    /// Read the EQ preamp gain in dB.
+    pub fn get_eq_preamp(&mut self) -> Result<f32> {
+        self.get_level_raw(
+            Feature::EffectsGraphicEQ,
+            proto::GraphicEq::PreampGain as u32,
         )
     }
 

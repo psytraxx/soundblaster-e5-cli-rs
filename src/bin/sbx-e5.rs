@@ -86,6 +86,21 @@ enum Command {
         gain: f32,
     },
 
+    /// Set the EQ preamp gain in dB. Pull it down to make headroom for
+    /// boosted bands.
+    Preamp {
+        #[arg(value_name = "GAIN_DB", allow_negative_numbers = true)]
+        gain_db: f32,
+    },
+
+    /// Sweep the device's `0x23` subcommand space and report what it
+    /// answers. Read-only.
+    Probe {
+        /// Highest subcommand to try (0x00 up to this, inclusive).
+        #[arg(long, default_value_t = 0x60, value_parser = maybe_hex)]
+        max: u8,
+    },
+
     /// Turn the whole SBX suite on or off.
     Sbx {
         // `bool` would otherwise be inferred as a SetTrue flag; this is a
@@ -107,6 +122,16 @@ enum Command {
 enum Setting {
     Level(f32),
     Enabled(bool),
+}
+
+/// Accept `0x2a` as well as plain decimal, so probe bounds can be written
+/// the same way the protocol notes write them.
+fn maybe_hex(s: &str) -> std::result::Result<u8, String> {
+    let r = match s.strip_prefix("0x").or_else(|| s.strip_prefix("0X")) {
+        Some(hex) => u8::from_str_radix(hex, 16),
+        None => s.parse(),
+    };
+    r.map_err(|e| format!("{e}"))
 }
 
 /// Parse the bare `on`/`off` vocabulary shared by every switch.
@@ -172,6 +197,17 @@ impl Command {
         match *self {
             Command::Treble { gain_db } => Some(gain_db),
             Command::Eq { gain, .. } => Some(gain),
+            _ => None,
+        }
+    }
+
+    /// The preamp gain this command carries. Separate from [`gain_db`]:
+    /// the preamp has a tighter range than a band.
+    ///
+    /// [`gain_db`]: Command::gain_db
+    fn preamp_db(&self) -> Option<f32> {
+        match *self {
+            Command::Preamp { gain_db } => Some(gain_db),
             _ => None,
         }
     }
@@ -284,6 +320,13 @@ fn main() -> Result<()> {
             "gain {gain} dB outside {lo}..={hi}"
         );
     }
+    if let Some(gain) = command.preamp_db() {
+        let (lo, hi) = sbx_e5::EQ_PREAMP_GAIN_DB;
+        anyhow::ensure!(
+            (lo..=hi).contains(&gain),
+            "preamp {gain} dB outside {lo}..={hi}"
+        );
+    }
     // `bass --crossover` writes the level first, so a bad frequency caught
     // only by the library would leave the level already applied.
     if let Command::Bass {
@@ -345,12 +388,66 @@ fn main() -> Result<()> {
             println!("eq band {band} = {gain:+} dB");
         }
 
+        Command::Preamp { gain_db } => {
+            dev.set_eq_preamp(gain_db)?;
+            println!("eq preamp = {gain_db} dB");
+        }
+
+        Command::Probe { max } => probe(&mut dev, max)?,
+
         Command::Sbx { on } => {
             let got = dev.set_sbx_master(on)?;
             println!("sbx = {}", if got { "on" } else { "off" });
         }
     }
 
+    Ok(())
+}
+
+/// Sweep the `0x23` subcommand space and report what the device answers.
+///
+/// The read path is non-destructive -- a `0x23 <sub>` query with no payload
+/// either returns a status report or is refused with the unsupported marker
+/// in byte 3 -- so the whole space can be swept without writing anything.
+/// This is how the subcommand carrying Creative's feature-control block
+/// (headphone high gain, direct mode, S/PDIF direct, restore defaults) gets
+/// identified on real hardware; see `reverse/e5-control-protocol.md`.
+fn probe(dev: &mut SoundBlasterE5, max: u8) -> Result<()> {
+    use sbx_e5::transport::UNSUPPORTED_MARKER;
+
+    if dev.is_dry_run() {
+        println!("probe needs a real device; nothing to sweep in dry-run mode");
+        return Ok(());
+    }
+
+    println!("sweeping 0x23 subcommands 0x00..=0x{max:02x}\n");
+    let (mut answered, mut refused, mut silent) = (0u32, 0u32, 0u32);
+
+    for sub in 0..=max {
+        match dev.query_raw(0x23, sub) {
+            Ok(Some(resp)) if resp[3] == UNSUPPORTED_MARKER => {
+                refused += 1;
+            }
+            Ok(Some(resp)) => {
+                answered += 1;
+                let body: Vec<String> = resp[3..12].iter().map(|b| format!("{b:02x}")).collect();
+                println!("  23 {sub:02x}  -> {}", body.join(" "));
+            }
+            Ok(None) => silent += 1,
+            // One bad subcommand should not abandon the sweep; the point is
+            // the map, not any single answer.
+            Err(e) => println!("  23 {sub:02x}  !! {e}"),
+        }
+    }
+
+    println!("\n{answered} answered, {refused} refused, {silent} silent");
+    if answered > 0 {
+        println!(
+            "\nA feature-control subcommand answers with a bitmask of supported\n\
+             features and their on/off state. Compare any candidate against the\n\
+             ordinals in reverse/android-protocol-tables.md before writing to it."
+        );
+    }
     Ok(())
 }
 

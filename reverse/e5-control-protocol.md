@@ -76,9 +76,41 @@ Bass sweep — it does **not** track the slider. Treated as a mode/keepalive the
 control panel re-asserts, interleaved 1:1 with the `0x20` writes. Not required
 per value. May need to be sent once at init; test empirically.
 
-### `0x23` — SBX master enable / read / keepalive
+### `0x23` — device control (many subcommands)
 
-Several subcommands, distinguished by byte 1:
+`0x23` is not one command but a subcommand space, selected by byte 1. The
+panel-open capture exercises sixteen of them:
+
+| Sub | Query | Response body | Meaning |
+|---|---|---|---|
+| `04` | `23 04 00` | `00 02 00 …` | undecoded |
+| `05` | `23 05 00` | `00 00 01 31 3c 01 50` | undecoded |
+| `05` | `23 05 01` | `00 01 02 3f 3f` | undecoded |
+| `06` | `23 06 01` | `00 00 …` | undecoded |
+| `0a` | `23 0a 00` | `00 02 …` | undecoded |
+| `12` | `23 12 00` | `00 00 …` | undecoded |
+| `23` | `23 23 01 <EN>` | echoes flag | SBX master enable/disable |
+| `24` | `23 24 00` | `00 01 00 01` | SBX master commit / read |
+| `25` | `23 25 00` | `00 03 00 01` | undecoded |
+| `26` | `23 26 00` | `00 03 00` | undecoded |
+| `27` | `23 27 01` | `00 00 64` | keepalive / master-sync |
+| `28` | `23 28 01` / `02` | `00 00` / `00 03` | undecoded |
+| `2a` | `23 2a 00` | streams parameter ranges | **parameter info** (below) |
+| `4c`, `4d` | `23 4c 00` | `80 00 …` | **not supported** |
+
+**A subcommand the device does not implement answers with `0x80` in byte
+3.** `23 4c` and `23 4d` both come back `00 23 4c 80`. That makes the space
+safe to sweep: a bare `23 <sub>` query with no payload either returns a
+status report or is refused. `sbx-e5 probe` does exactly that.
+
+Creative's SoundCore protocol has a `FEATURECONTROL` command carrying
+headphone high gain, direct mode, S/PDIF direct and restore-defaults as a
+bitmask (see `android-protocol-tables.md`). On this HID transport it is
+most likely one of the undecoded `0x23` subcommands above. Which one is not
+yet known — it needs either a capture of the Windows panel toggling one of
+those switches, or a `probe` run on hardware.
+
+The master-switch subcommands, in detail:
 
 **`23 23` — SBX enable/disable.** Byte 3 is the flag.
 
@@ -136,6 +168,40 @@ correlated to any value or toggle.
 After each toggle the panel also replays the `0x26 01 96 xx` level ramp
 (`00 02 04 07 09 18`) — cosmetic fade to/from the effect setpoint, not part of
 the enable state.
+
+### `0x23 0x2a` — parameter info (ranges)
+
+A single `23 2a 00` query makes the device stream one report per
+(parameter, field). This is the device's own declared range table, and it
+overrides Creative's cross-product Android library wherever the two differ.
+
+```
+offset  bytes              meaning
+0       00                 leading zero / status
+1       23                 echoes opcode
+2       2a                 echoes subcommand
+3       00
+4       KK                 field: 80 = max, 90 = min, a0 = step
+5       MM                 module id (96 = playback)
+6       II                 parameter id
+7..10   <f32 LITTLE-endian> the value
+```
+
+**Note the byte order.** Unlike the `0x20`/`0x26` value path, this report
+carries the float **little**-endian. `00 00 96 43` is `300.0`.
+
+Decoded from `captures/read.json`:
+
+| Parameter | min | max | step |
+|---|---|---|---|
+| EQ preamp (`0x0a`) | `-6.0` | `6.0` | `1.0` |
+| EQ band 0 (`0x0b`) | `-12.0` | `12.0` | — |
+| XBass crossover (`0x17`) | `10.0` | `300.0` | `1.0` |
+
+Only the parameters the panel happened to query appear. Creative's Android
+library declares `-24..24` for a band, `-12..12` for the preamp and
+`10..1000` for the crossover — those are the generic Sound Blaster figures;
+the E5's own answers above are the ones this crate enforces.
 
 ## Read path (query → interrupt IN) — CONFIRMED
 
@@ -226,6 +292,13 @@ offset  bytes              meaning
 **Critical difference from the write path:** the query carries the *raw*
 parameter id (`BASS_LEVEL` = `0x19`), **not** the `id << 1` selector the
 `0x20` write path uses (`0x32`). The read path does not double the id.
+
+**The module byte is substitutable.** Byte 2 is not fixed at `0x96`: the
+same capture has the panel query `26 01 95 06` — module `0x95`
+(voice input), parameter `0x06` (VoiceFocus enable) — and the device answer
+`00 26 01 00 95 06 00000000`. So the whole microphone parameter table is
+*readable* today by changing that byte. Whether it is writable the same way
+is untested, and a write is not reversible the way a read is.
 
 #### Decoded panel-open state sync
 
@@ -326,20 +399,29 @@ fn encode_set_param(param: u8, value: f32) -> [u8; 64] {
 
 ## Open items
 
+- Identify which `0x23` subcommand carries Creative's feature-control block
+  (headphone high gain, direct mode, S/PDIF direct, restore defaults).
+  `sbx-e5 probe` sweeps the space read-only; the alternative is a capture of
+  the Windows panel toggling one of those switches.
+- Decode the remaining `0x23` subcommands: `04`, `05`, `06`, `0a`, `12`,
+  `25`, `26`, `28`.
+- Determine whether writes accept a module byte other than `0x96`, which
+  would make the microphone table reachable. Reads already do.
 - Determine whether `0x26`/`0x23 27` reports are required at init or purely
   cosmetic (send only the `0x20` float, or only `0x23 23`/`0x23 24`, and
   listen).
 - Decode the `0x3f`/`0x22`/`0x25` status reads (map to Get* semantics).
 
 The `id << 1` rule is settled for the implemented table: every effect in it
-was toggled on an E5 and heard to do the right thing. A parameter *outside*
-that table is still unproven, however — the ids below come from the G6
-table and the driver's own property names, not from an E5 capture.
+was toggled on an E5 and heard to do the right thing. Ids *outside* that
+table are known — they are ordinals of Creative's own parameter enum, see
+`android-protocol-tables.md` — but no write to one has been exercised on an
+E5, so each is still unproven on this transport.
 
 ## Unimplemented features (leads)
 
-Each still needs a capture of the Windows panel exercising the control to
-pin down its selector byte on this transport.
+Each still needs its addressing on this transport pinned down, either by a
+capture of the Windows panel exercising the control or by `sbx-e5 probe`.
 
 Microphone side (CrystalVoice) — the largest gap. Every stock E5 profile
 sets values for all of these, so they are real controls on this hardware
@@ -354,18 +436,30 @@ rather than driver-family leftovers:
 | Mic EQ | `mic_eq` with a preset; per-band level/frequency/width |
 
 Every one of these has a known parameter id in the voice-input module
-(`0x95`) — see `android-protocol-tables.md`. What is missing is how that
-module is addressed on this HID path; every captured write targets the
-playback module (`0x96`). VoiceFX and Mic EQ presets are bundles of
-continuous parameters, so they ride the ordinary `0x20` float path.
+(`0x95`) — see `android-protocol-tables.md` — and all of them are already
+*readable*, because the `0x26` query takes the module byte directly. What is
+missing is whether a `0x20` write accepts the same substitution; every
+captured write targets the playback module (`0x96`). VoiceFX and Mic EQ
+presets are bundles of continuous parameters, so they ride the ordinary
+`0x20` float path.
 
-Device hardware:
+Output-side switches. Creative groups these four into one feature-control
+message, so whichever `0x23` subcommand carries it reaches all four at once:
+
+| Feature | Ordinal in the feature-control bitmask |
+|---|---|
+| Restore defaults | 3 |
+| Direct mode (bypass the DSP) | 5 |
+| Headphone high gain | 6 |
+| S/PDIF input direct | 7 |
+
+Other device hardware:
 
 | Feature | Evidence |
 |---|---|
 | LED control | Driver sets `XoutLedState` at init/mute/active transitions with small ints (1/2/3); meaning of each value unknown |
 | USB power overdrive | Registered by name in the driver's subdevice table, alongside known-real entries |
-| Device I/O config | Line-out/mic config, S/PDIF routing, jack detect, headphone impedance — fits the E5's actual I/O |
+| Jack selector | Creative exposes line-in / mic-in / optical-in selection; input side only |
 | Direct monitoring | Per-input enables plus `Mic1Level`/`Mic2Level` |
 | Bluetooth auto-connect | One `BluetoothAutoConnect_isEnabled` property in the driver's constant table |
 | Battery | No hits in the driver's constants, but the SoundCore command set carries `BATTERYLEVEL` and `BATTERYSTATUS`, with an E5-specific response quirk |

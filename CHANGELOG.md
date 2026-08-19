@@ -5,24 +5,28 @@ Dates are `YYYY-MM-DD`. See the README's TODO section for known gaps.
 
 ## [Unreleased]
 
-### 2026-08-19 — bass crossover, and a wider EQ
+### 2026-08-19 — bass crossover and EQ preamp
 
 #### Added
 - **The bass crossover frequency can now be set.** `sbx-e5 bass 0.3
   --crossover 90` picks the frequency below which the bass boost applies,
-  anywhere from 10 to 1000 Hz. The device's own default is 80 Hz. Until now
+  anywhere from 10 to 300 Hz. The device's own default is 80 Hz. Until now
   this option existed but always reported that it could not be sent.
+- **The EQ preamp can now be set**, with `sbx-e5 preamp -3`. It lifts or
+  lowers the whole curve by up to 6 dB either way. Turning it down is how
+  you make room for boosted bands without the sound distorting.
+- **A new `probe` command** asks the device which of its control messages it
+  understands and prints the answers. It only ever reads, never changes a
+  setting. It is a tool for working out how to reach the features that are
+  still missing — headphone high-gain mode, direct mode, optical
+  passthrough — not something needed for everyday use. The README explains
+  what to do with what it prints.
 
-#### Fixed
-- **EQ bands accept the full range the device supports.** Any band can now
-  be set between -24 and +24 dB; previously anything beyond ±12 dB was
-  refused. The tighter ±12 dB limit was real, but it belongs to the overall
-  EQ preamp, not to the individual bands. The interactive screen's EQ
-  display follows the same wider range.
-
-#### Note
-- Nothing was ever sent incorrectly — the old limit only turned away
-  settings that would have worked.
+#### Changed
+- The accepted ranges for EQ gain and the bass crossover now come from the
+  device itself rather than from Creative's general documentation, so they
+  match what an E5 will actually accept: EQ bands ±12 dB, EQ preamp ±6 dB,
+  crossover 10-300 Hz.
 
 ### 2026-08-19 — smart volume profiles
 

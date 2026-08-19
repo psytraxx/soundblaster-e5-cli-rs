@@ -46,15 +46,17 @@ sbx-e5 info                    # attached Creative devices + interfaces
 sbx-e5 selectors               # parameter id/selector table
 sbx-e5 bass 0.3                # SBX bass strength (Creative default)
 sbx-e5 bass off                # disable without losing the stored level
-sbx-e5 bass 0.3 --crossover 80
+sbx-e5 bass 0.3 --crossover 80 # crossover in Hz, 10..=300
 sbx-e5 treble -4.5             # dB applied to upper EQ bands
 sbx-e5 surround 0.12
 sbx-e5 crystalizer 0.5
 sbx-e5 dialog-plus 0.5
 sbx-e5 smart-volume 0.74
 sbx-e5 smart-volume 0.74 --mode night   # normal, loud or night
-sbx-e5 eq --band 9 --gain 6
+sbx-e5 eq --band 9 --gain 6    # per-band gain, -12..=12 dB
+sbx-e5 preamp -3               # EQ preamp, -6..=6 dB
 sbx-e5 sbx on|off              # SBX master switch
+sbx-e5 probe                   # read-only sweep of undecoded device commands
 ```
 
 Every level command also accepts `on`/`off` in place of a number, to disable
@@ -144,10 +146,41 @@ code only -- see [Provenance](#provenance) above.
 
 ## TODO
 
+### Next step: run the probe on hardware
+
+Most of what is missing is blocked on the same thing — knowing which device
+message carries it. `sbx-e5 probe` answers that without writing anything:
+
+```sh
+sbx-e5 probe              # sweeps 0x23 subcommands 0x00..=0x60
+sbx-e5 probe --max 0xff   # the whole space
+```
+
+It sends each `0x23 <sub>` query with no payload and prints what comes back.
+A subcommand the device does not implement is refused with `0x80` in byte 3,
+so the sweep separates real subcommands from empty ones. Reads do not change
+any setting, which is what makes this safe to run.
+
+What to look for: a subcommand whose response body reads as a **bitmask of
+supported features plus their on/off state**. That is Creative's
+feature-control block, and it carries headphone high gain, direct mode,
+S/PDIF input direct and restore-defaults together. Match candidates against
+the feature ordinals in
+[reverse/android-protocol-tables.md](reverse/android-protocol-tables.md)
+(`RESTORE_DEFAULT` = 3, `DIRECT_MODE` = 5, `HEADPHONE_HIGH_GAIN` = 6,
+`SPDIF_IN_DIRECT` = 7) before writing to anything.
+
+Eight subcommands are known to answer but are still undecoded — `04`, `05`,
+`06`, `0a`, `12`, `25`, `26`, `28`. Their captured responses are tabulated
+in [reverse/e5-control-protocol.md](reverse/e5-control-protocol.md).
+
+Record whatever the sweep returns in that file, so the next person starts
+from the map rather than rebuilding it.
+
 ### Unimplemented features
 
-Each needs its selector byte pinned down before it can be added. Evidence
-and leads for all of these are in
+Each needs its addressing on this USB path pinned down before it can be
+added — see the probe step above. Evidence and leads for all of these are in
 [reverse/e5-control-protocol.md](reverse/e5-control-protocol.md), and the
 parameter tables from Creative's own Android software are in
 [reverse/android-protocol-tables.md](reverse/android-protocol-tables.md).
@@ -163,17 +196,24 @@ largest gap — Creative's own E5 profiles configure every one of these:
   values, so this rides the ordinary float path.
 - **Mic EQ** — eight-band parametric, per-band gain/frequency/bandwidth.
 
-Creative's parameter ids for all of the above are known. What is not known
-is how to address them over this USB path: they live in a separate "voice
-input" module, and every write captured so far targets the playback module.
-Probe that with reads before writing anything.
+Creative's parameter ids for all of the above are known, and all of them
+are already *readable*: the read query takes the module byte directly, and
+the microphone controls live in a separate "voice input" module. What is not
+known is whether a write accepts the same substitution — every write
+captured so far targets the playback module. Read the values back first.
 
-Device-hardware features, plausible but less certain:
+On the output side, Creative groups four switches into a single
+feature-control message: **headphone high gain** (the high-impedance amp
+mode), **direct mode** (bypass the DSP entirely), **S/PDIF input direct**
+(optical passthrough), and **restore defaults**. Finding the one message
+that carries them reaches all four at once — that is what the probe step
+above is for.
+
+Other device-hardware features:
 
 - **LED control** — on/off, mode, intensity, pulsation.
 - **USB power overdrive** — enable plus off/on current limits.
-- **Device I/O configuration** — line-out and mic configuration, S/PDIF
-  routing, jack detection, headphone impedance selection.
+- **Jack selector** — line-in, mic-in or optical-in. Input side only.
 - **Direct monitoring** — per-input enables with separate mic levels.
 - **Bluetooth auto-connect**.
 - **Battery level and status**.
