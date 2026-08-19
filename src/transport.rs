@@ -634,6 +634,49 @@ mod tests {
     }
 
     #[test]
+    fn smart_volume_modes_round_trip_through_their_wire_values() {
+        use crate::proto::SmartVolumeMode;
+
+        // Declaration order is the wire order; `Normal` is the stock value
+        // every shipped profile carries.
+        assert_eq!(SmartVolumeMode::Normal.value(), 0.0);
+        assert_eq!(SmartVolumeMode::Loud.value(), 1.0);
+        assert_eq!(SmartVolumeMode::Night.value(), 2.0);
+        assert_eq!(SmartVolumeMode::default(), SmartVolumeMode::Normal);
+
+        for mode in SmartVolumeMode::ALL {
+            assert_eq!(SmartVolumeMode::from_value(mode.value()), Some(mode));
+            assert_eq!(mode.name().parse(), Ok(mode));
+        }
+
+        // The mode rides the same float path as every level, so a value
+        // that comes back a hair off still has to resolve.
+        assert_eq!(
+            SmartVolumeMode::from_value(1.999),
+            Some(SmartVolumeMode::Night)
+        );
+        assert_eq!(SmartVolumeMode::from_value(3.0), None);
+        assert_eq!(SmartVolumeMode::from_value(-1.0), None);
+        assert!("quiet".parse::<SmartVolumeMode>().is_err());
+    }
+
+    #[test]
+    fn smart_volume_mode_encodes_on_its_own_selector() {
+        use crate::proto::{SmartVolume, SmartVolumeMode};
+
+        let id = id_of(Feature::EffectsSmartVolume, SmartVolume::Mode as u32)
+            .expect("smart volume mode has a selector");
+        assert_eq!(id, id::SMART_VOLUME_MODE);
+        // Distinct from the enable and level either side of it, so picking a
+        // profile cannot be mistaken for switching the effect.
+        assert_ne!(id, id::SMART_VOLUME_ENABLE);
+        assert_ne!(id, id::SMART_VOLUME_LEVEL);
+
+        let r = encode_set_param(selector_of(id), SmartVolumeMode::Night.value());
+        assert_eq!(prefix(&r, 14), "2000160ad502080c209640000000");
+    }
+
+    #[test]
     fn eq_bands_map_to_consecutive_selectors() {
         use crate::proto::GraphicEq;
         for band in 0..10u32 {

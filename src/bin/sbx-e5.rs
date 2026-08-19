@@ -3,7 +3,9 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use indicatif::{ProgressBar, ProgressStyle};
-use sbx_e5::proto::{Crystalizer, DialogPlus, Feature, SimpleSurround, SmartVolume, XBass};
+use sbx_e5::proto::{
+    Crystalizer, DialogPlus, Feature, SimpleSurround, SmartVolume, SmartVolumeMode, XBass,
+};
 use sbx_e5::transport::id;
 use sbx_e5::{SoundBlasterE5, transport};
 
@@ -69,6 +71,9 @@ enum Command {
     SmartVolume {
         #[arg(value_name = "LEVEL|on|off")]
         setting: Setting,
+        /// Profile to select: normal, loud, or night.
+        #[arg(long)]
+        mode: Option<SmartVolumeMode>,
     },
 
     /// Set the gain of a single graphic-EQ band.
@@ -154,7 +159,7 @@ impl Command {
             | Command::Surround { setting }
             | Command::Crystalizer { setting }
             | Command::DialogPlus { setting }
-            | Command::SmartVolume { setting } => setting.level(),
+            | Command::SmartVolume { setting, .. } => setting.level(),
             _ => None,
         }
     }
@@ -313,7 +318,14 @@ fn main() -> Result<()> {
         Command::Surround { setting } => apply(&mut dev, &SURROUND, setting)?,
         Command::Crystalizer { setting } => apply(&mut dev, &CRYSTALIZER, setting)?,
         Command::DialogPlus { setting } => apply(&mut dev, &DIALOG_PLUS, setting)?,
-        Command::SmartVolume { setting } => apply(&mut dev, &SMART_VOLUME, setting)?,
+        Command::SmartVolume { setting, mode } => {
+            apply(&mut dev, &SMART_VOLUME, setting)?;
+            if let Some(mode) = mode {
+                dev.set_smart_volume_mode(mode)
+                    .context("setting the smart volume profile")?;
+                println!("smart volume mode = {mode}");
+            }
+        }
 
         Command::Eq { band, gain } => {
             dev.set_eq_enabled(true)?;

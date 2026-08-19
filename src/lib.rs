@@ -13,7 +13,9 @@ pub mod proto;
 pub mod transport;
 pub mod tui;
 
-use proto::{Crystalizer, DialogPlus, Feature, SimpleSurround, SmartVolume, XBass};
+use proto::{
+    Crystalizer, DialogPlus, Feature, SimpleSurround, SmartVolume, SmartVolumeMode, XBass,
+};
 use transport::Transport;
 
 /// Errors from talking to the device.
@@ -269,6 +271,30 @@ impl SoundBlasterE5 {
             SmartVolume::Strength as u32,
             level,
         )
+    }
+
+    /// Select the Smart Volume profile.
+    ///
+    /// Unlike the levels either side of it this is an enumerated choice, so
+    /// it bypasses [`Self::set_level`]'s `0.0..=1.0` check -- `Night` writes
+    /// `2.0`.
+    pub fn set_smart_volume_mode(&mut self, mode: SmartVolumeMode) -> Result<()> {
+        self.transport.set_float(
+            Feature::EffectsSmartVolume,
+            SmartVolume::Mode as u32,
+            mode.value(),
+        )
+    }
+
+    /// Read back the Smart Volume profile.
+    ///
+    /// A value the device reports that is not one of the three known modes
+    /// is [`Error::UnexpectedResponse`] rather than a silent `Normal`.
+    pub fn get_smart_volume_mode(&mut self) -> Result<SmartVolumeMode> {
+        let raw = self.get_level_raw(Feature::EffectsSmartVolume, SmartVolume::Mode as u32)?;
+        SmartVolumeMode::from_value(raw).ok_or(Error::UnexpectedResponse {
+            id: transport::id::SMART_VOLUME_MODE,
+        })
     }
 
     // ---- Graphic EQ (treble) -------------------------------------------

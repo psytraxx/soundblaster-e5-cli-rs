@@ -52,6 +52,7 @@ sbx-e5 surround 0.12
 sbx-e5 crystalizer 0.5
 sbx-e5 dialog-plus 0.5
 sbx-e5 smart-volume 0.74
+sbx-e5 smart-volume 0.74 --mode night   # normal, loud or night
 sbx-e5 eq --band 9 --gain 6
 sbx-e5 sbx on|off              # SBX master switch
 ```
@@ -99,7 +100,7 @@ high nibble = category, low bits = a one-hot mask.
 | Surround | `0x1000_0200` | `Enable=0`, `Level=1` |
 | Crystalizer | `0x1000_0008` | `Enable=0`, `Level=1` |
 | Dialog Plus | `0x1000_0002` | `Enable=0`, `Strength=1` |
-| Smart Volume | `0x1000_0004` | `Enable=0`, `Strength=1`, `Mode=2` |
+| Smart Volume | `0x1000_0004` | `Enable=0`, `Strength=1`, `Mode=2` (`normal`/`loud`/`night`) |
 | SBX master | `0x6000_0001` | `SBXMasterOnOff=7` |
 
 All recovered constants live in `src/proto.rs`.
@@ -117,7 +118,10 @@ the author owns, using USBPcap -- the analysis and its test vectors are in
 [reverse/e5-control-protocol.md](reverse/e5-control-protocol.md), with the
 raw captures in `reverse/captures/`. Parameter identifiers are numeric
 constants read out of the driver's published metadata; constants are facts
-about a protocol, not authorship.
+about a protocol, not authorship. The same goes for the three Smart Volume
+profile names, which are the vocabulary its control panel presents to the
+user -- the values they map to are inferred, and are noted as such in
+`src/proto.rs` until hardware confirms them.
 
 Creative's Windows driver is Creative Technology Ltd's and is available only
 from Creative. Sound Blaster and SBX are trademarks of Creative Technology

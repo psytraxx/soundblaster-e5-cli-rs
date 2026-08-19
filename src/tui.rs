@@ -22,7 +22,8 @@ use ratatui::widgets::{Block, Borders, Paragraph};
 use tui_slider::{Slider, SliderOrientation, SliderState};
 
 use crate::proto::{
-    Crystalizer, DialogPlus, Feature, GraphicEq, SimpleSurround, SmartVolume, XBass,
+    Crystalizer, DialogPlus, Feature, GraphicEq, SimpleSurround, SmartVolume, SmartVolumeMode,
+    XBass,
 };
 use crate::{Result, SoundBlasterE5};
 
@@ -43,6 +44,10 @@ enum Control {
     /// is concerned, but has no `0x20` selector: it rides its own `0x23`
     /// opcode -- see [`SoundBlasterE5::set_sbx_master`].
     SbxMaster,
+    /// The Smart Volume profile: an enumerated choice, not a level. Left/
+    /// right step through [`SmartVolumeMode::ALL`]; it has no switch of its
+    /// own, riding the Smart Volume row's enable instead.
+    SmartVolumeMode,
     /// The graphic EQ: an enable switch plus ten band gains. Drawn as the
     /// panel below the row list rather than as a line in it, so selecting
     /// this row highlights the panel. Left/right move a cursor between
@@ -69,12 +74,20 @@ struct Row {
     bands: [f32; 10],
     /// Which band left/right moves, when `control` is `Control::Eq`.
     band_cursor: usize,
+    /// The selected profile. Unused outside `Control::SmartVolumeMode`.
+    mode: SmartVolumeMode,
 }
 
 impl Row {
     /// True for a row with a level to slide, as opposed to a bare switch.
     fn has_level(&self) -> bool {
         matches!(self.control, Control::Effect { .. })
+    }
+
+    /// True for a row that has no on/off switch of its own, so the switch
+    /// column is left blank rather than drawn permanently off.
+    fn has_switch(&self) -> bool {
+        !matches!(self.control, Control::SmartVolumeMode)
     }
 
     /// Step size for one arrow-key press on the row's level.
@@ -86,6 +99,7 @@ impl Row {
     fn display(&self) -> String {
         match self.control {
             Control::Effect { .. } => format!("{:.0}%", self.value * 100.0),
+            Control::SmartVolumeMode => self.mode.to_string(),
             Control::SbxMaster | Control::Eq => if self.on { "on" } else { "off" }.into(),
         }
     }
@@ -100,6 +114,7 @@ fn row(label: &'static str, control: Control, on: bool, value: f32) -> Row {
         value,
         bands: [0.0; 10],
         band_cursor: 0,
+        mode: SmartVolumeMode::Normal,
     }
 }
 
@@ -159,6 +174,7 @@ fn rows() -> Vec<Row> {
             SmartVolume::Strength as u32,
             0.74,
         ),
+        row("  profile", Control::SmartVolumeMode, false, 0.0),
         row("Graphic EQ", Control::Eq, false, 0.0),
     ]
 }
@@ -220,6 +236,9 @@ impl App {
             Control::Eq => {
                 dev.set_enable_raw(Feature::EffectsGraphicEQ, GraphicEq::Enable as u32, on)
             }
+            // A profile is a choice, not a switch: toggling it would have
+            // nothing to write.
+            Control::SmartVolumeMode => return,
             // The master switch has no `0x20` selector -- it rides its own
             // `0x23 0x23` opcode, and answers with the state it ended up in.
             Control::SbxMaster => {
@@ -253,6 +272,7 @@ impl App {
             // A switch has nothing to slide; left/right just flips it.
             Control::SbxMaster => self.toggle(dev),
             Control::Eq => self.move_band_cursor(dir),
+            Control::SmartVolumeMode => self.cycle_mode(dir, dev),
             Control::Effect { .. } => {
                 let row = &mut self.rows[self.selected];
                 let step = row.step();
@@ -262,6 +282,27 @@ impl App {
                 self.write_level(dev);
             }
         }
+    }
+
+    /// Step to the next or previous profile and send it. Clamps at the
+    /// ends rather than wrapping, so holding an arrow settles instead of
+    /// cycling past the choice the user wanted.
+    fn cycle_mode(&mut self, dir: f32, dev: &mut SoundBlasterE5) {
+        let row = &mut self.rows[self.selected];
+        let last = SmartVolumeMode::ALL.len() as isize - 1;
+        let i = SmartVolumeMode::ALL
+            .iter()
+            .position(|m| *m == row.mode)
+            .unwrap_or(0) as isize;
+        let next = (i + dir.signum() as isize).clamp(0, last) as usize;
+        if SmartVolumeMode::ALL[next] == row.mode {
+            return;
+        }
+        row.mode = SmartVolumeMode::ALL[next];
+        let mode = row.mode;
+        let label = row.label;
+        let result = dev.set_smart_volume_mode(mode);
+        self.report(result, format!("{} = {mode}", label.trim()));
     }
 
     fn move_band_cursor(&mut self, dir: f32) {
@@ -333,6 +374,13 @@ impl App {
                         &mut read_err,
                     );
                 }
+                Control::SmartVolumeMode => match dev.get_smart_volume_mode() {
+                    Ok(mode) => {
+                        row.mode = mode;
+                        read_ok += 1;
+                    }
+                    Err(_) => read_err += 1,
+                },
                 Control::SbxMaster => match dev.get_sbx_master() {
                     Ok(on) => {
                         row.on = on;
@@ -499,7 +547,7 @@ fn draw(f: &mut ratatui::Frame, app: &App) {
         Span::styled("↑↓", Style::default().fg(Color::Cyan)),
         Span::raw(" select   "),
         Span::styled("←→", Style::default().fg(Color::Cyan)),
-        Span::raw(" level / pick band   "),
+        Span::raw(" level / profile / pick band   "),
         Span::styled("+-", Style::default().fg(Color::Cyan)),
         Span::raw(" band gain   "),
         Span::styled("space", Style::default().fg(Color::Cyan)),
@@ -586,18 +634,22 @@ fn draw_rows(f: &mut ratatui::Frame, app: &App, area: Rect) {
                 Constraint::Length(3),
                 Constraint::Length(label_w),
                 Constraint::Min(8),
-                Constraint::Length(6),
+                // Wide enough for the longest value, `normal`, plus the
+                // gutter that keeps it off the border.
+                Constraint::Length(8),
             ])
             .split(line);
 
         let selected = *idx == app.selected;
 
-        let (glyph, style) = switch_style(row.on, selected);
-        f.render_widget(Paragraph::new(format!(" {glyph}")).style(style), cols[0]);
+        if row.has_switch() {
+            let (glyph, style) = switch_style(row.on, selected);
+            f.render_widget(Paragraph::new(format!(" {glyph}")).style(style), cols[0]);
+        }
 
         let label_style = if selected {
             Style::default().fg(Color::Black).bg(Color::Cyan)
-        } else if row.on {
+        } else if row.on || !row.has_switch() {
             Style::default()
         } else {
             Style::default().fg(Color::DarkGray)
@@ -614,13 +666,13 @@ fn draw_rows(f: &mut ratatui::Frame, app: &App, area: Rect) {
             );
         }
 
-        let value_style = if row.on {
+        let value_style = if row.on || !row.has_switch() {
             Style::default()
         } else {
             Style::default().fg(Color::DarkGray)
         };
         f.render_widget(
-            Paragraph::new(format!("{:>5}", row.display())).style(value_style),
+            Paragraph::new(format!("{:>7}", row.display())).style(value_style),
             cols[3],
         );
     }
@@ -752,6 +804,18 @@ mod tests {
         app.selected = 3;
         app.rows[3].on = false;
         shot("Bass selected and switched off", &app, 80, 24);
+
+        // The profile row: selected, and on a mode other than the default,
+        // to show it draws no switch of its own.
+        let profile = app
+            .rows
+            .iter()
+            .position(|r| matches!(r.control, Control::SmartVolumeMode))
+            .expect("the profile row is in the list");
+        app.selected = profile;
+        app.rows[profile].mode = SmartVolumeMode::Night;
+        shot("Smart Volume profile selected", &app, 80, 24);
+        app.rows[profile].mode = SmartVolumeMode::Normal;
 
         // The EQ row, on, with a few bands moved off flat.
         app.selected = app.rows.len() - 1;
