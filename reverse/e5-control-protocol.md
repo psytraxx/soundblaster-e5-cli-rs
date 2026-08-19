@@ -413,14 +413,15 @@ fn encode_set_param(param: u8, value: f32) -> [u8; 64] {
 - Decode the `0x3f`/`0x22`/`0x25` status reads (map to Get* semantics).
 
 The `id << 1` rule is settled for the implemented table: every effect in it
-was toggled on an E5 and heard to do the right thing. A parameter *outside*
-that table is still unproven, however — the ids below come from the G6
-table and the driver's own property names, not from an E5 capture.
+was toggled on an E5 and heard to do the right thing. Ids *outside* that
+table are known — they are ordinals of Creative's own parameter enum, see
+`android-protocol-tables.md` — but no write to one has been exercised on an
+E5, so each is still unproven on this transport.
 
 ## Unimplemented features (leads)
 
-Each still needs a capture of the Windows panel exercising the control to
-pin down its selector byte on this transport.
+Each still needs its addressing on this transport pinned down, either by a
+capture of the Windows panel exercising the control or by `sbx-e5 probe`.
 
 Microphone side (CrystalVoice) — the largest gap. Every stock E5 profile
 sets values for all of these, so they are real controls on this hardware
@@ -435,18 +436,30 @@ rather than driver-family leftovers:
 | Mic EQ | `mic_eq` with a preset; per-band level/frequency/width |
 
 Every one of these has a known parameter id in the voice-input module
-(`0x95`) — see `android-protocol-tables.md`. What is missing is how that
-module is addressed on this HID path; every captured write targets the
-playback module (`0x96`). VoiceFX and Mic EQ presets are bundles of
-continuous parameters, so they ride the ordinary `0x20` float path.
+(`0x95`) — see `android-protocol-tables.md` — and all of them are already
+*readable*, because the `0x26` query takes the module byte directly. What is
+missing is whether a `0x20` write accepts the same substitution; every
+captured write targets the playback module (`0x96`). VoiceFX and Mic EQ
+presets are bundles of continuous parameters, so they ride the ordinary
+`0x20` float path.
 
-Device hardware:
+Output-side switches. Creative groups these four into one feature-control
+message, so whichever `0x23` subcommand carries it reaches all four at once:
+
+| Feature | Ordinal in the feature-control bitmask |
+|---|---|
+| Restore defaults | 3 |
+| Direct mode (bypass the DSP) | 5 |
+| Headphone high gain | 6 |
+| S/PDIF input direct | 7 |
+
+Other device hardware:
 
 | Feature | Evidence |
 |---|---|
 | LED control | Driver sets `XoutLedState` at init/mute/active transitions with small ints (1/2/3); meaning of each value unknown |
 | USB power overdrive | Registered by name in the driver's subdevice table, alongside known-real entries |
-| Device I/O config | Line-out/mic config, S/PDIF routing, jack detect, headphone impedance — fits the E5's actual I/O |
+| Jack selector | Creative exposes line-in / mic-in / optical-in selection; input side only |
 | Direct monitoring | Per-input enables plus `Mic1Level`/`Mic2Level` |
 | Bluetooth auto-connect | One `BluetoothAutoConnect_isEnabled` property in the driver's constant table |
 | Battery | No hits in the driver's constants, but the SoundCore command set carries `BATTERYLEVEL` and `BATTERYSTATUS`, with an E5-specific response quirk |

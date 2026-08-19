@@ -19,7 +19,8 @@ Dates are `YYYY-MM-DD`. See the README's TODO section for known gaps.
   understands and prints the answers. It only ever reads, never changes a
   setting. It is a tool for working out how to reach the features that are
   still missing — headphone high-gain mode, direct mode, optical
-  passthrough — not something needed for everyday use.
+  passthrough — not something needed for everyday use. The README explains
+  what to do with what it prints.
 
 #### Changed
 - The accepted ranges for EQ gain and the bass crossover now come from the

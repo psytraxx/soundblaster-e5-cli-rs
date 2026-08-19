@@ -1003,10 +1003,9 @@ mod tests {
     /// hand alongside the constants. Pin it so a named id cannot be added
     /// without being listed.
     ///
-    /// Note this cannot be a scan of `0x00..=BASS_LEVEL`: ids `0x15`-`0x17`
-    /// exist on the device but are not identified yet -- `0x17` reads back
-    /// `80.0`, so it is not even normalized. See the open items in
-    /// `reverse/e5-control-protocol.md`.
+    /// Note this cannot be a scan of `0x00..=BASS_LEVEL`: ids `0x15` and
+    /// `0x16` are bass management, which the E5 has no hardware path for,
+    /// so they are identified but deliberately absent from the table.
     #[test]
     fn selector_table_lists_every_named_id_exactly_once() {
         let named = [
