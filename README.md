@@ -46,15 +46,17 @@ sbx-e5 info                    # attached Creative devices + interfaces
 sbx-e5 selectors               # parameter id/selector table
 sbx-e5 bass 0.3                # SBX bass strength (Creative default)
 sbx-e5 bass off                # disable without losing the stored level
-sbx-e5 bass 0.3 --crossover 80
+sbx-e5 bass 0.3 --crossover 80 # crossover in Hz, 10..=300
 sbx-e5 treble -4.5             # dB applied to upper EQ bands
 sbx-e5 surround 0.12
 sbx-e5 crystalizer 0.5
 sbx-e5 dialog-plus 0.5
 sbx-e5 smart-volume 0.74
 sbx-e5 smart-volume 0.74 --mode night   # normal, loud or night
-sbx-e5 eq --band 9 --gain 6
+sbx-e5 eq --band 9 --gain 6    # per-band gain, -12..=12 dB
+sbx-e5 preamp -3               # EQ preamp, -6..=6 dB
 sbx-e5 sbx on|off              # SBX master switch
+sbx-e5 probe                   # read-only sweep of undecoded device commands
 ```
 
 Every level command also accepts `on`/`off` in place of a number, to disable
@@ -168,7 +170,15 @@ is how to address them over this USB path: they live in a separate "voice
 input" module, and every write captured so far targets the playback module.
 Probe that with reads before writing anything.
 
-Device-hardware features, plausible but less certain:
+On the output side, Creative groups four switches into a single
+feature-control message: **headphone high gain** (the high-impedance amp
+mode), **direct mode** (bypass the DSP entirely), **S/PDIF input direct**
+(optical passthrough), and **restore defaults**. Finding the one message
+that carries them reaches all four at once. On this USB path it is expected
+to be one of the undecoded `0x23` subcommands; `sbx-e5 probe` sweeps that
+space read-only to narrow it down.
+
+Other device-hardware features:
 
 - **LED control** — on/off, mode, intensity, pulsation.
 - **USB power overdrive** — enable plus off/on current limits.

@@ -67,11 +67,34 @@ const OP_MASTER: u8 = 0x23;
 /// response coming back on the interrupt IN endpoint.
 const OP_GET_PARAM: u8 = 0x26;
 
+/// Byte 3 of a `0x23` response when the device does not implement that
+/// subcommand. Seen on `23 4c` and `23 4d` in `captures/read.json`, which
+/// both answer `00 23 4c 80`.
+pub const UNSUPPORTED_MARKER: u8 = 0x80;
+
 /// Interrupt IN endpoint the device answers `0x26` queries on.
 /// (`reverse/e5-control-protocol.md`, "Read path".)
 const READ_ENDPOINT: u8 = 0x83;
 /// Every read response is this long.
 const READ_LEN: usize = 16;
+
+/// DSP module a parameter belongs to -- report byte 2 of a `0x26` query,
+/// and byte 9 of a `0x20` write.
+///
+/// Only [`module::PLAYBACK`] is ever written. [`module::VOICE_INPUT`] is
+/// wire-confirmed for *reads*: `captures/read.json` has the Windows panel
+/// query `26 01 95 06` and the device answer with `00 26 01 00 95 06`.
+/// Nothing has ever been written to it.
+pub mod module {
+    /// Playback effects: the SBX suite and the EQ.
+    pub const PLAYBACK: u8 = 0x96;
+    /// Microphone chain (CrystalVoice). Read-only as far as we know.
+    pub const VOICE_INPUT: u8 = 0x95;
+    /// Room calibration. Creative blocks third-party writes here.
+    pub const ROOM_CALIBRATION: u8 = 0x8F;
+    /// Master control (volume, mute). Creative blocks writes here.
+    pub const MASTER_CONTROL: u8 = 0x80;
+}
 
 /// Fixed framing bytes at offsets 1..7 of every `0x20` report.
 const SET_PARAM_HDR: [u8; 6] = [0x00, 0x16, 0x0a, 0xd5, 0x02, 0x08];
@@ -250,18 +273,26 @@ pub fn encode_master() -> [u8; REPORT_LEN] {
     r
 }
 
-/// Build a `0x26` GET_PARAM query report for a raw parameter id.
+/// Build a `0x26` GET_PARAM query report for a raw parameter id in a
+/// module.
 ///
-/// `26 01 96 <id>` goes out as a normal SET_REPORT; the answer arrives on
-/// interrupt IN `0x83` as `00 26 01 96 00 <id> <f32 big-endian>`. `id` is
-/// the **raw** id (`0x19` for bass level), not `id << 1`.
-pub fn encode_get_param(id: u8) -> [u8; REPORT_LEN] {
+/// `26 01 <module> <id>` goes out as a normal SET_REPORT; the answer
+/// arrives on interrupt IN `0x83` as
+/// `00 26 01 00 <module> <id> <f32 big-endian>`. `id` is the **raw** id
+/// (`0x19` for bass level), not `id << 1`.
+pub fn encode_get_param_in(module: u8, id: u8) -> [u8; REPORT_LEN] {
     let mut r = [0u8; REPORT_LEN];
     r[0] = OP_GET_PARAM;
     r[1] = 0x01;
-    r[2] = 0x96;
+    r[2] = module;
     r[3] = id;
     r
+}
+
+/// Build a GET_PARAM query for the playback module, which is the only one
+/// this crate drives.
+pub fn encode_get_param(id: u8) -> [u8; REPORT_LEN] {
+    encode_get_param_in(module::PLAYBACK, id)
 }
 
 /// Build the `0x23 0x23` SBX master enable/disable report: `23 23 01 01`
@@ -419,10 +450,18 @@ impl Transport {
     ///
     /// `id` is the raw parameter id, not the `id << 1` write selector.
     pub fn get_param_raw(&mut self, id: u8) -> Result<f32> {
-        let query = encode_get_param(id);
+        self.get_param_raw_in(module::PLAYBACK, id)
+    }
+
+    /// Send a raw `0x26` GET_PARAM query against a specific module.
+    ///
+    /// Reads are non-destructive, which is what makes this safe to point at
+    /// a module we do not otherwise drive.
+    pub fn get_param_raw_in(&mut self, module: u8, id: u8) -> Result<f32> {
+        let query = encode_get_param_in(module, id);
 
         if self.dry_run {
-            println!("GET id=0x{id:02X} (dry run -> 0.0)\n    {query:02X?}");
+            println!("GET module=0x{module:02X} id=0x{id:02X} (dry run -> 0.0)\n    {query:02X?}");
             return Ok(0.0);
         }
 
@@ -474,6 +513,39 @@ impl Transport {
 
         self.write_raw(&query)?;
         self.read_matching(0, decode_master_commit_response)
+    }
+
+    /// Send an arbitrary query report and return the first response that
+    /// echoes its opcode and subcommand.
+    ///
+    /// This is the discovery primitive behind `sbx-e5 probe`. It exists
+    /// because the read path is non-destructive: a query the device does
+    /// not implement is answered with the unsupported marker rather than
+    /// doing anything, so the subcommand space can be swept safely.
+    ///
+    /// `Ok(None)` means the endpoint drained without a matching answer.
+    pub fn query_raw(&mut self, op: u8, sub: u8) -> Result<Option<[u8; READ_LEN]>> {
+        let mut query = [0u8; REPORT_LEN];
+        query[0] = op;
+        query[1] = sub;
+
+        if self.dry_run {
+            println!("QUERY {op:02X} {sub:02X} (dry run -> no response)");
+            return Ok(None);
+        }
+
+        self.write_raw(&query)?;
+        match self.read_matching(0, |buf| {
+            (buf.len() >= READ_LEN && buf[1] == op && buf[2] == sub).then(|| {
+                let mut out = [0u8; READ_LEN];
+                out.copy_from_slice(&buf[..READ_LEN]);
+                out
+            })
+        }) {
+            Ok(buf) => Ok(Some(buf)),
+            Err(Error::UnexpectedResponse { .. }) => Ok(None),
+            Err(e) => Err(e),
+        }
     }
 
     /// Read interrupt reports until `decode` accepts one, or the endpoint
@@ -764,6 +836,27 @@ mod tests {
             Value::Float(80.0),
         );
         assert!(matches!(e, Err(Error::Unsupported { .. })));
+    }
+
+    /// The voice-input module is addressable on the read path: the Windows
+    /// panel queries `26 01 95 06` in `captures/read.json`.
+    #[test]
+    fn get_param_can_address_another_module() {
+        let q = encode_get_param_in(module::VOICE_INPUT, 0x06);
+        assert_eq!(&q[..4], &[0x26, 0x01, 0x95, 0x06]);
+        // The default helper still targets playback.
+        assert_eq!(encode_get_param(0x19)[2], module::PLAYBACK);
+    }
+
+    #[test]
+    fn eq_preamp_maps_to_its_own_id() {
+        let id = id_of(
+            Feature::EffectsGraphicEQ,
+            crate::proto::GraphicEq::PreampGain as u32,
+        );
+        assert_eq!(id, Some(id::EQ_PREAMP));
+        // The preamp must not collide with band 0.
+        assert_ne!(id::EQ_PREAMP, id::EQ_BAND0);
     }
 
     /// The crossover is the one parameter that is not a normalized level:
