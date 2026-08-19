@@ -5,6 +5,21 @@ Dates are `YYYY-MM-DD`. See the README's TODO section for known gaps.
 
 ## [Unreleased]
 
+### 2026-08-19 — housekeeping
+
+#### Changed
+- **Text can be selected with the mouse again while the interactive screen
+  is open.** It used to capture the mouse even though it only ever responds
+  to the keyboard, which stopped the terminal's own click-and-drag
+  selection from working.
+- Setting the treble no longer draws a progress bar. It applies four bands
+  in a fraction of a second, so the bar only ever flickered.
+
+#### Note
+- No control, value or message changes. This release is internal tidying:
+  a little less code to maintain and four fewer third-party packages to
+  build.
+
 ### 2026-08-19 — bass crossover and EQ preamp
 
 #### Added

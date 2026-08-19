@@ -8,13 +8,8 @@
 use std::io;
 use std::time::Duration;
 
+use crossterm::ExecutableCommand;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
-use crossterm::terminal::{
-    EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode,
-};
-use crossterm::{ExecutableCommand, event::DisableMouseCapture, event::EnableMouseCapture};
-use ratatui::Terminal;
-use ratatui::backend::CrosstermBackend;
 use ratatui::layout::{Constraint, Direction, Layout, Rect};
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
@@ -422,34 +417,20 @@ impl App {
     }
 }
 
-/// Puts the terminal into raw/alternate-screen mode, and restores it on the
-/// way out.
+/// Restores the terminal on the way out of [`run`].
 ///
-/// This is a guard rather than a pair of calls around the event loop so the
-/// restore also runs when the loop *panics*. Unwinding past a bare
-/// `disable_raw_mode()` would otherwise drop the user back into a shell
-/// with no echo and no cursor.
+/// `ratatui::try_init` installs a panic hook that restores the terminal, so
+/// this guard is not what covers a panic. It covers the ordinary error
+/// paths: the event loop returns `Result`, and `?` unwinding out of it must
+/// not leave the user in a shell with no echo.
 struct TerminalGuard;
-
-impl TerminalGuard {
-    fn enter() -> Result<Self> {
-        enable_raw_mode()?;
-        let mut out = io::stdout();
-        out.execute(EnterAlternateScreen)?;
-        out.execute(EnableMouseCapture)?;
-        Ok(Self)
-    }
-}
 
 impl Drop for TerminalGuard {
     fn drop(&mut self) {
-        // Best-effort: this runs while unwinding, where returning an error
-        // is not an option and panicking again would abort the process.
-        let _ = disable_raw_mode();
-        let mut out = io::stdout();
-        let _ = out.execute(LeaveAlternateScreen);
-        let _ = out.execute(DisableMouseCapture);
-        let _ = out.execute(crossterm::cursor::Show);
+        ratatui::restore();
+        // `restore` leaves the alternate screen but does not re-show the
+        // cursor, and drawing a frame hides it.
+        let _ = io::stdout().execute(crossterm::cursor::Show);
     }
 }
 
@@ -458,15 +439,16 @@ pub fn run(dev: &mut SoundBlasterE5) -> Result<()> {
     let mut app = App::new(dev.is_dry_run());
     app.refresh_from_device(dev);
 
-    let _guard = TerminalGuard::enter()?;
-    let backend = CrosstermBackend::new(io::stdout());
-    let mut terminal = Terminal::new(backend)?;
+    // `try_init`, not `init`: a terminal we cannot set up is an error to
+    // report, not a panic.
+    let mut terminal = ratatui::try_init()?;
+    let _guard = TerminalGuard;
 
     event_loop(&mut terminal, &mut app, dev)
 }
 
 fn event_loop(
-    terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
+    terminal: &mut ratatui::DefaultTerminal,
     app: &mut App,
     dev: &mut SoundBlasterE5,
 ) -> Result<()> {
@@ -772,6 +754,7 @@ fn draw_eq_panel(f: &mut ratatui::Frame, app: &App, area: Rect) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use ratatui::Terminal;
     use ratatui::backend::TestBackend;
 
     /// Render `app` at the given size and return the frame as plain text,
